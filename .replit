@@ -1,28 +1,8 @@
-run = "python -m uvicorn main:app --host 0.0.0.0 --port 8080"
+run = "uvicorn main:app --host 0.0.0.0 --port 3000"
 
 [nix]
 channel = "stable-24_05"
-packages = ["python3", "python3Packages.pip", "python3Packages.uvicorn", "python3Packages.fastapi"]
 
 [deployment]
-run = ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port 8080"]
-build = ["sh", "-c", "python -m pip install -r requirements.txt"]
-
-[env]
-PYTHONPATH = "${PYTHONPATH}:${REPL_HOME}"
-
-[workflows]
-runButton = "Start Server"
-
-[workflows.workflow]
-name = "Start Server"
-author = 40070281
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python -m pip install -r requirements.txt"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python -m uvicorn main:app --host 0.0.0.0 --port 8080"
+run = ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8080"]
+build = ["sh", "-c", "pip install -r requirements.txt"]
