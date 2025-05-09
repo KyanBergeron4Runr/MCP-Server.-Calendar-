@@ -11,7 +11,7 @@ import json
 import asyncio
 from typing import Dict, Any
 import logging
-from tools.calendar import check_availability, add_event, update_event, delete_event
+from tools.microsoft_calendar import calendar_client
 from schemas.calendar_schemas import (
     TimeRange,
     EventCreate,
