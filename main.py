@@ -1,5 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+import os
+from dotenv import load_dotenv
+from auth import get_api_key
+
+# Load environment variables
+load_dotenv()
 from sse_starlette.sse import EventSourceResponse
 import json
 import asyncio
@@ -101,7 +107,7 @@ async def mcp_events():
     return EventSourceResponse(event_generator())
 
 @app.post("/mcp/message")
-async def handle_message(request: Request):
+async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
     """Handle tool execution requests."""
     try:
         data = await request.json()
