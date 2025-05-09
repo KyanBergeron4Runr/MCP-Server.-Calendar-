@@ -146,6 +146,14 @@ async def handle_message(request: Request):
         logger.error(f"Error processing message: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/")
+def root():
+    return {"message": "MCP Server is running 🚀"}
+
+@app.get("/test")
+def test():
+    return {"test": True}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=3000) 
