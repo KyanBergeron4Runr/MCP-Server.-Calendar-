@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph.generated.users.users_request_builder import UsersRequestBuilder
-from msgraph.generated.users.item.calendar.events.events_request_builder import EventsRequestBuilder
+from msgraph.client import GraphServiceClient
+from msgraph.api.users_api import UsersApi
+from msgraph.api.calendar_api import CalendarApi
 from azure.identity import ClientSecretCredential
 from msgraph_core.authentication import AzureIdentityAuthenticationProvider
 from msgraph_core import BaseGraphRequestAdapter
