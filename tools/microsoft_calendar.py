@@ -22,12 +22,18 @@ load_dotenv()
 class MicrosoftCalendarClient:
     def __init__(self):
         self.client_id = os.getenv("MS_CLIENT_ID")
-        self.client_secret = os.getenv("MS_CLIENT_SECRET")
+        self.client_secret = os.getenv("MS_CLIENT_SECRET") 
         self.tenant_id = os.getenv("MS_TENANT_ID")
-        self.user_id = os.getenv("MS_USER_ID")  # The user's email or ID
-        
-        if not all([self.client_id, self.client_secret, self.tenant_id, self.user_id]):
-            raise ValueError("Missing required Microsoft Graph API credentials in environment variables")
+        self.user_id = os.getenv("MS_USER_ID")
+
+        missing = []
+        if not self.client_id: missing.append("MS_CLIENT_ID")
+        if not self.client_secret: missing.append("MS_CLIENT_SECRET")
+        if not self.tenant_id: missing.append("MS_TENANT_ID") 
+        if not self.user_id: missing.append("MS_USER_ID")
+
+        if missing:
+            raise ValueError(f"Missing required Microsoft Graph API credentials: {', '.join(missing)}")
         
         # Initialize the Graph client
         self.credential = ClientSecretCredential(
