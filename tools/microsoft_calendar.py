@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph.core import GraphClient
+from msgraph.generated.users.users_request_builder import UsersRequestBuilder
+from msgraph.generated.users.item.calendar.events.events_request_builder import EventsRequestBuilder
 from azure.identity import ClientSecretCredential
+from msgraph_core import APIClient
 import os
 from dotenv import load_dotenv
 from schemas.calendar_schemas import (
@@ -32,7 +34,7 @@ class MicrosoftCalendarClient:
             client_id=self.client_id,
             client_secret=self.client_secret
         )
-        self.client = GraphClient(credential=self.credential)
+        self.client = APIClient(credential=self.credential)
 
     async def check_availability(self, time_range: TimeRange) -> AvailabilityResponse:
         """Check calendar availability for a given time range."""
@@ -49,19 +51,16 @@ class MicrosoftCalendarClient:
                 "meetingDuration": "PT1H"  # 1 hour meeting duration
             }
 
-            # Call the findMeetingTimes API
-            response = await self.client.post(
-                f"/users/{self.user_id}/findMeetingTimes",
-                json=request_body
-            )
+            # Create and send the request
+            users = UsersRequestBuilder(self.client)
+            response = await users.by_user_id(self.user_id).find_meeting_times.post(request_body)
             
-            if response.status_code == 200:
-                data = response.json()
+            if response:
                 available_slots = []
                 
                 # Extract available time slots from the response
-                for suggestion in data.get("meetingTimeSuggestions", []):
-                    start_time = datetime.fromisoformat(suggestion["meetingTimeSlot"]["start"]["dateTime"].replace("Z", "+00:00"))
+                for suggestion in response.meeting_time_suggestions or []:
+                    start_time = datetime.fromisoformat(suggestion.meeting_time_slot.start.date_time.replace("Z", "+00:00"))
                     available_slots.append(start_time)
                 
                 return AvailabilityResponse(
@@ -69,7 +68,7 @@ class MicrosoftCalendarClient:
                     slots=available_slots
                 )
             else:
-                raise Exception(f"Failed to check availability: {response.text}")
+                raise Exception("Failed to check availability: No response received")
                 
         except Exception as e:
             raise Exception(f"Error checking availability: {str(e)}")
@@ -94,20 +93,18 @@ class MicrosoftCalendarClient:
                 }
             }
 
-            # Create the event
-            response = await self.client.post(
-                f"/users/{self.user_id}/calendar/events",
-                json=event_data
-            )
+            # Create and send the request
+            users = UsersRequestBuilder(self.client)
+            events = users.by_user_id(self.user_id).calendar.events
+            response = await events.post(event_data)
             
-            if response.status_code == 201:
-                data = response.json()
+            if response:
                 return EventResponse(
-                    event_id=data["id"],
+                    event_id=response.id,
                     status="created"
                 )
             else:
-                raise Exception(f"Failed to create event: {response.text}")
+                raise Exception("Failed to create event: No response received")
                 
         except Exception as e:
             raise Exception(f"Error creating event: {str(e)}")
@@ -132,19 +129,18 @@ class MicrosoftCalendarClient:
                 }
             }
 
-            # Update the event
-            response = await self.client.patch(
-                f"/users/{self.user_id}/calendar/events/{event.event_id}",
-                json=event_data
-            )
+            # Create and send the request
+            users = UsersRequestBuilder(self.client)
+            events = users.by_user_id(self.user_id).calendar.events
+            response = await events.by_event_id(event.event_id).patch(event_data)
             
-            if response.status_code == 200:
+            if response:
                 return EventResponse(
                     event_id=event.event_id,
                     status="updated"
                 )
             else:
-                raise Exception(f"Failed to update event: {response.text}")
+                raise Exception("Failed to update event: No response received")
                 
         except Exception as e:
             raise Exception(f"Error updating event: {str(e)}")
@@ -152,18 +148,15 @@ class MicrosoftCalendarClient:
     async def delete_event(self, event: EventDelete) -> EventResponse:
         """Delete a calendar event."""
         try:
-            # Delete the event
-            response = await self.client.delete(
-                f"/users/{self.user_id}/calendar/events/{event.event_id}"
-            )
+            # Create and send the request
+            users = UsersRequestBuilder(self.client)
+            events = users.by_user_id(self.user_id).calendar.events
+            await events.by_event_id(event.event_id).delete()
             
-            if response.status_code == 204:
-                return EventResponse(
-                    event_id=event.event_id,
-                    status="deleted"
-                )
-            else:
-                raise Exception(f"Failed to delete event: {response.text}")
+            return EventResponse(
+                event_id=event.event_id,
+                status="deleted"
+            )
                 
         except Exception as e:
             raise Exception(f"Error deleting event: {str(e)}")
