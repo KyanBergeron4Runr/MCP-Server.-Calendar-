@@ -5,7 +5,7 @@ import json
 import asyncio
 from typing import Dict, Any
 import logging
-from tools.microsoft_calendar import calendar_client
+from tools.calendar import check_availability, add_event, update_event, delete_event
 from schemas.calendar_schemas import (
     TimeRange,
     EventCreate,
@@ -117,7 +117,7 @@ async def handle_message(request: Request):
                 start_time=datetime.fromisoformat(parameters["start_time"]),
                 end_time=datetime.fromisoformat(parameters["end_time"])
             )
-            return await calendar_client.check_availability(time_range)
+            return check_availability(time_range)
             
         elif tool_name == "calendar.add_event":
             event = EventCreate(
@@ -126,7 +126,7 @@ async def handle_message(request: Request):
                 end_time=datetime.fromisoformat(parameters["end_time"]),
                 description=parameters.get("description")
             )
-            return await calendar_client.add_event(event)
+            return add_event(event)
             
         elif tool_name == "calendar.update_event":
             event = EventUpdate(
@@ -136,11 +136,11 @@ async def handle_message(request: Request):
                 end_time=datetime.fromisoformat(parameters["end_time"]),
                 description=parameters.get("description")
             )
-            return await calendar_client.update_event(event)
+            return update_event(event)
             
         elif tool_name == "calendar.delete_event":
             event = EventDelete(event_id=parameters["event_id"])
-            return await calendar_client.delete_event(event)
+            return delete_event(event)
         
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
