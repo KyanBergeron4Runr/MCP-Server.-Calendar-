@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Get API key from environment variable
-API_KEY = os.getenv("API_KEY", "your-secret-key-here")
+API_KEY = os.getenv("API_KEY")
+if not API_KEY:
+    raise Exception("API_KEY environment variable is not set")
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
