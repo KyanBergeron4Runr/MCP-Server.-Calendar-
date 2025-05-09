@@ -3,7 +3,8 @@ from typing import List, Dict, Any, Optional
 from msgraph.generated.users.users_request_builder import UsersRequestBuilder
 from msgraph.generated.users.item.calendar.events.events_request_builder import EventsRequestBuilder
 from azure.identity import ClientSecretCredential
-from msgraph_core import APIClient
+from msgraph_core.authentication import AzureIdentityAuthenticationProvider
+from msgraph_core import BaseGraphRequestAdapter
 import os
 from dotenv import load_dotenv
 from schemas.calendar_schemas import (
@@ -34,7 +35,8 @@ class MicrosoftCalendarClient:
             client_id=self.client_id,
             client_secret=self.client_secret
         )
-        self.client = APIClient(credential=self.credential)
+        self.auth_provider = AzureIdentityAuthenticationProvider(self.credential)
+        self.client = BaseGraphRequestAdapter(self.auth_provider)
 
     async def check_availability(self, time_range: TimeRange) -> AvailabilityResponse:
         """Check calendar availability for a given time range."""
