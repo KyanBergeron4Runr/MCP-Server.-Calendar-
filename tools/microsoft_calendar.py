@@ -34,7 +34,13 @@ class MicrosoftCalendarClient:
         if not self.user_id: missing.append("MS_USER_ID")
 
         if missing:
-            print(f"Warning: Missing Microsoft Graph API credentials: {', '.join(missing)}. Using mock implementation.")
+            print(f"ERROR: Missing Microsoft Graph API credentials: {', '.join(missing)}")
+            print("Current values:")
+            print(f"MS_CLIENT_ID: {'SET' if self.client_id else 'MISSING'}")
+            print(f"MS_CLIENT_SECRET: {'SET' if self.client_secret else 'MISSING'}")
+            print(f"MS_TENANT_ID: {'SET' if self.tenant_id else 'MISSING'}")
+            print(f"MS_USER_ID: {'SET' if self.user_id else 'MISSING'}")
+            print("Falling back to mock implementation")
             return
         
         # Initialize the Graph client
