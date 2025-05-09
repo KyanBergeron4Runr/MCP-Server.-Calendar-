@@ -5,6 +5,14 @@ import json
 import asyncio
 from typing import Dict, Any
 import logging
+from tools.microsoft_calendar import calendar_client
+from schemas.calendar_schemas import (
+    TimeRange,
+    EventCreate,
+    EventUpdate,
+    EventDelete
+)
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,11 +29,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mock tool registry - will be replaced with actual tool registry
+# Tool registry with Microsoft Calendar tools
 TOOLS = {
     "calendar.check_availability": {
         "name": "check_availability",
-        "description": "Check calendar availability for a given time range",
+        "description": "Check Microsoft Calendar availability for a given time range",
         "parameters": {
             "type": "object",
             "properties": {
@@ -37,7 +45,7 @@ TOOLS = {
     },
     "calendar.add_event": {
         "name": "add_event",
-        "description": "Add a new calendar event",
+        "description": "Add a new event to Microsoft Calendar",
         "parameters": {
             "type": "object",
             "properties": {
@@ -51,7 +59,7 @@ TOOLS = {
     },
     "calendar.update_event": {
         "name": "update_event",
-        "description": "Update an existing calendar event",
+        "description": "Update an existing Microsoft Calendar event",
         "parameters": {
             "type": "object",
             "properties": {
@@ -66,7 +74,7 @@ TOOLS = {
     },
     "calendar.delete_event": {
         "name": "delete_event",
-        "description": "Delete a calendar event",
+        "description": "Delete a Microsoft Calendar event",
         "parameters": {
             "type": "object",
             "properties": {
@@ -103,15 +111,36 @@ async def handle_message(request: Request):
         if not tool_name or tool_name not in TOOLS:
             raise HTTPException(status_code=404, detail=f"Tool {tool_name} not found")
 
-        # Mock responses for now
+        # Route to appropriate Microsoft Calendar function
         if tool_name == "calendar.check_availability":
-            return {"available": True, "slots": ["2024-01-01T10:00:00Z", "2024-01-01T11:00:00Z"]}
+            time_range = TimeRange(
+                start_time=datetime.fromisoformat(parameters["start_time"]),
+                end_time=datetime.fromisoformat(parameters["end_time"])
+            )
+            return await calendar_client.check_availability(time_range)
+            
         elif tool_name == "calendar.add_event":
-            return {"event_id": "mock_event_123", "status": "created"}
+            event = EventCreate(
+                title=parameters["title"],
+                start_time=datetime.fromisoformat(parameters["start_time"]),
+                end_time=datetime.fromisoformat(parameters["end_time"]),
+                description=parameters.get("description")
+            )
+            return await calendar_client.add_event(event)
+            
         elif tool_name == "calendar.update_event":
-            return {"event_id": parameters.get("event_id"), "status": "updated"}
+            event = EventUpdate(
+                event_id=parameters["event_id"],
+                title=parameters["title"],
+                start_time=datetime.fromisoformat(parameters["start_time"]),
+                end_time=datetime.fromisoformat(parameters["end_time"]),
+                description=parameters.get("description")
+            )
+            return await calendar_client.update_event(event)
+            
         elif tool_name == "calendar.delete_event":
-            return {"event_id": parameters.get("event_id"), "status": "deleted"}
+            event = EventDelete(event_id=parameters["event_id"])
+            return await calendar_client.delete_event(event)
         
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
