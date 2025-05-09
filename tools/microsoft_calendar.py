@@ -33,7 +33,8 @@ class MicrosoftCalendarClient:
         if not self.user_id: missing.append("MS_USER_ID")
 
         if missing:
-            raise ValueError(f"Missing required Microsoft Graph API credentials: {', '.join(missing)}")
+            print(f"Warning: Missing Microsoft Graph API credentials: {', '.join(missing)}. Using mock implementation.")
+            return
         
         # Initialize the Graph client
         self.credential = ClientSecretCredential(
