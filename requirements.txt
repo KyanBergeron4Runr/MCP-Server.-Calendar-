@@ -11,7 +11,3 @@ aiohttp>=3.9.3
 azure-identity>=1.15.0
 msgraph-core>=0.2.2
 msgraph-sdk>=1.0.0
-msgraph-sdk
-msgraph-core
-msgraph-core
-msgraph-core
