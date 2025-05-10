@@ -1,4 +1,4 @@
-run = "uvicorn main:app --host 0.0.0.0 --port 5000"
+run = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"
 modules = ["python-3.11"]
 
 [nix]
@@ -14,12 +14,4 @@ localPort = 5000
 externalPort = 80
 
 [workflows]
-
-[[workflows.workflow]]
-name = "Run"
-author = 40070281
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"
+runButton = "Run"
