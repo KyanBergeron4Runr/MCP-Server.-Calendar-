@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph.client import GraphServiceClient
-from msgraph.api.users_api import UsersApi
-from msgraph.api.calendar_api import CalendarApi
+from msgraph.core import GraphClient
+from msgraph.core.requests.request_builders import RequestBuilder as UsersRequestBuilder
 from azure.identity import ClientSecretCredential
 from msgraph_core.authentication import AzureIdentityAuthenticationProvider
 from msgraph_core import BaseGraphRequestAdapter
