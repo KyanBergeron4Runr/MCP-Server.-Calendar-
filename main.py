@@ -1,28 +1,34 @@
-from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
 from dotenv import load_dotenv
-from auth import get_api_key
-
-# Load environment variables
-load_dotenv()
-from sse_starlette.sse import EventSourceResponse
 import json
 import asyncio
-from typing import Dict, Any
-import logging
-from tools.microsoft_calendar import calendar_client
-from schemas.calendar_schemas import (
-    TimeRange,
-    EventCreate,
-    EventUpdate,
-    EventDelete
-)
 from datetime import datetime
+from typing import Dict, Any
 
-# Configure logging
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sse_starlette.sse import EventSourceResponse
+
+# Configure logging first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Load environment variables before importing other modules
+load_dotenv()
+
+try:
+    from auth import get_api_key
+    from tools.microsoft_calendar import calendar_client
+    from schemas.calendar_schemas import (
+        TimeRange,
+        EventCreate,
+        EventUpdate,
+        EventDelete
+    )
+except Exception as e:
+    logger.error(f"Error importing modules: {str(e)}")
+    raise
 
 app = FastAPI(title="MCP Calendar Tool Server")
 
@@ -94,12 +100,16 @@ TOOLS = {
 async def event_generator():
     """Generate SSE events for tool availability."""
     while True:
-        # Send all tools as a single event
-        yield {
-            "event": "tools",
-            "data": json.dumps({"tools": list(TOOLS.values())})
-        }
-        await asyncio.sleep(30)  # Update every 30 seconds
+        try:
+            # Send all tools as a single event
+            yield {
+                "event": "tools",
+                "data": json.dumps({"tools": list(TOOLS.values())})
+            }
+            await asyncio.sleep(30)  # Update every 30 seconds
+        except Exception as e:
+            logger.error(f"Error in event generator: {str(e)}")
+            await asyncio.sleep(5)  # Wait a bit before retrying
 
 @app.get("/mcp-events")
 async def mcp_events():
@@ -118,35 +128,39 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             raise HTTPException(status_code=404, detail=f"Tool {tool_name} not found")
 
         # Route to appropriate Microsoft Calendar function
-        if tool_name == "calendar.check_availability":
-            time_range = TimeRange(
-                start_time=datetime.fromisoformat(parameters["start_time"]),
-                end_time=datetime.fromisoformat(parameters["end_time"])
-            )
-            return check_availability(time_range)
-            
-        elif tool_name == "calendar.add_event":
-            event = EventCreate(
-                title=parameters["title"],
-                start_time=datetime.fromisoformat(parameters["start_time"]),
-                end_time=datetime.fromisoformat(parameters["end_time"]),
-                description=parameters.get("description")
-            )
-            return add_event(event)
-            
-        elif tool_name == "calendar.update_event":
-            event = EventUpdate(
-                event_id=parameters["event_id"],
-                title=parameters["title"],
-                start_time=datetime.fromisoformat(parameters["start_time"]),
-                end_time=datetime.fromisoformat(parameters["end_time"]),
-                description=parameters.get("description")
-            )
-            return update_event(event)
-            
-        elif tool_name == "calendar.delete_event":
-            event = EventDelete(event_id=parameters["event_id"])
-            return delete_event(event)
+        try:
+            if tool_name == "calendar.check_availability":
+                time_range = TimeRange(
+                    start_time=datetime.fromisoformat(parameters["start_time"]),
+                    end_time=datetime.fromisoformat(parameters["end_time"])
+                )
+                return await calendar_client.check_availability(time_range)
+                
+            elif tool_name == "calendar.add_event":
+                event = EventCreate(
+                    title=parameters["title"],
+                    start_time=datetime.fromisoformat(parameters["start_time"]),
+                    end_time=datetime.fromisoformat(parameters["end_time"]),
+                    description=parameters.get("description")
+                )
+                return await calendar_client.add_event(event)
+                
+            elif tool_name == "calendar.update_event":
+                event = EventUpdate(
+                    event_id=parameters["event_id"],
+                    title=parameters["title"],
+                    start_time=datetime.fromisoformat(parameters["start_time"]),
+                    end_time=datetime.fromisoformat(parameters["end_time"]),
+                    description=parameters.get("description")
+                )
+                return await calendar_client.update_event(event)
+                
+            elif tool_name == "calendar.delete_event":
+                event = EventDelete(event_id=parameters["event_id"])
+                return await calendar_client.delete_event(event)
+        except Exception as e:
+            logger.error(f"Error executing calendar operation: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
         
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
