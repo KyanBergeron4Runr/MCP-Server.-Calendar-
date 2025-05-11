@@ -36,7 +36,12 @@ class MicrosoftCalendarClient:
             self.user_id = os.getenv("MS_USER_ID")
 
             if not all([self.client_id, self.client_secret, self.tenant_id, self.user_id]):
-                logger.warning("Missing Microsoft Graph API credentials. Calendar features will be disabled.")
+                missing_vars = []
+                if not self.client_id: missing_vars.append("MS_CLIENT_ID")
+                if not self.client_secret: missing_vars.append("MS_CLIENT_SECRET")
+                if not self.tenant_id: missing_vars.append("MS_TENANT_ID")
+                if not self.user_id: missing_vars.append("MS_USER_ID")
+                logger.error(f"Missing Microsoft Graph API credentials: {', '.join(missing_vars)}")
                 return
 
             # Initialize the Graph client
