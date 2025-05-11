@@ -59,40 +59,40 @@ class MicrosoftCalendarClient:
         if not self.client:
             raise Exception("Microsoft Graph client not initialized. Please check your credentials.")
 
-    async def check_availability(self, time_range: TimeRange) -> AvailabilityResponse:
-        """Check calendar availability for a given time range."""
+    async def check_availability(self, data: dict) -> dict:
+        """Check if there are any calendar conflicts for a given time range.
+        
+        Args:
+            data (dict): Dictionary containing start_time and end_time in ISO format
+            
+        Returns:
+            dict: Dictionary with availability status
+        """
         try:
             self._check_client()
             
-            # Format the request body for the findMeetingTimes API
-            request_body = {
-                "attendees": [{"emailAddress": {"address": self.user_id}, "type": "required"}],
-                "timeConstraint": {
-                    "timeslots": [{
-                        "start": {"dateTime": time_range.start_time.isoformat(), "timeZone": "UTC"},
-                        "end": {"dateTime": time_range.end_time.isoformat(), "timeZone": "UTC"}
-                    }]
-                },
-                "meetingDuration": "PT1H"  # 1 hour meeting duration
+            # Extract time range from input data
+            start_time = data.get("start_time")
+            end_time = data.get("end_time")
+            
+            if not start_time or not end_time:
+                raise ValueError("start_time and end_time are required")
+            
+            # Get calendar view for the specified time range
+            endpoint = f'/users/{self.user_id}/calendarView'
+            params = {
+                'startDateTime': start_time,
+                'endDateTime': end_time
             }
-
-            # Create and send the request
-            endpoint = f'/users/{self.user_id}/findMeetingTimes'
-            response = await self.client.post(endpoint, json=request_body)
+            
+            response = await self.client.get(endpoint, params=params)
             
             if response:
-                available_slots = []
-                data = response.json()
-                
-                # Extract available time slots from the response
-                for suggestion in data.get('meetingTimeSuggestions', []):
-                    start_time = datetime.fromisoformat(suggestion['meetingTimeSlot']['start']['dateTime'].replace('Z', '+00:00'))
-                    available_slots.append(start_time)
-                
-                return AvailabilityResponse(
-                    available=len(available_slots) > 0,
-                    slots=available_slots
-                )
+                # If any events are returned, the time slot is not available
+                events = response.json().get('value', [])
+                return {
+                    "available": len(events) == 0
+                }
             else:
                 raise Exception("Failed to check availability: No response received")
                 
