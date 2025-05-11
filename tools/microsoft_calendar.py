@@ -63,7 +63,7 @@ class MicrosoftCalendarClient:
         """Check calendar availability for a given time range."""
         try:
             self._check_client()
-
+            
             # Format the request body for the findMeetingTimes API
             request_body = {
                 "attendees": [{"emailAddress": {"address": self.user_id}, "type": "required"}],
@@ -79,23 +79,23 @@ class MicrosoftCalendarClient:
             # Create and send the request
             endpoint = f'/users/{self.user_id}/findMeetingTimes'
             response = await self.client.post(endpoint, json=request_body)
-
+            
             if response:
                 available_slots = []
                 data = response.json()
-
+                
                 # Extract available time slots from the response
                 for suggestion in data.get('meetingTimeSuggestions', []):
                     start_time = datetime.fromisoformat(suggestion['meetingTimeSlot']['start']['dateTime'].replace('Z', '+00:00'))
                     available_slots.append(start_time)
-
+                
                 return AvailabilityResponse(
                     available=len(available_slots) > 0,
                     slots=available_slots
                 )
             else:
                 raise Exception("Failed to check availability: No response received")
-
+                
         except Exception as e:
             logger.error(f"Error checking availability: {str(e)}")
             raise
@@ -104,7 +104,7 @@ class MicrosoftCalendarClient:
         """Create a new calendar event."""
         try:
             self._check_client()
-
+            
             # Format the event data for Microsoft Graph API
             event_data = {
                 "subject": event.title,
@@ -125,7 +125,7 @@ class MicrosoftCalendarClient:
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events'
             response = await self.client.post(endpoint, json=event_data)
-
+            
             if response:
                 data = response.json()
                 return EventResponse(
@@ -134,7 +134,7 @@ class MicrosoftCalendarClient:
                 )
             else:
                 raise Exception("Failed to create event: No response received")
-
+                
         except Exception as e:
             logger.error(f"Error creating event: {str(e)}")
             raise
@@ -143,7 +143,7 @@ class MicrosoftCalendarClient:
         """Update an existing calendar event."""
         try:
             self._check_client()
-
+            
             # Format the event data for Microsoft Graph API
             event_data = {
                 "subject": event.title,
@@ -164,7 +164,7 @@ class MicrosoftCalendarClient:
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
             response = await self.client.patch(endpoint, json=event_data)
-
+            
             if response:
                 return EventResponse(
                     event_id=event.event_id,
@@ -172,7 +172,7 @@ class MicrosoftCalendarClient:
                 )
             else:
                 raise Exception("Failed to update event: No response received")
-
+                
         except Exception as e:
             logger.error(f"Error updating event: {str(e)}")
             raise
@@ -181,16 +181,16 @@ class MicrosoftCalendarClient:
         """Delete a calendar event."""
         try:
             self._check_client()
-
+            
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
             await self.client.delete(endpoint)
-
+            
             return EventResponse(
                 event_id=event.event_id,
                 status="deleted"
             )
-
+                
         except Exception as e:
             logger.error(f"Error deleting event: {str(e)}")
             raise
