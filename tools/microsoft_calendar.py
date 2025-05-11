@@ -40,13 +40,14 @@ class MicrosoftCalendarClient:
                 return
 
             # Initialize the Graph client
-            self.credential = ClientSecretCredential(
+            credential = ClientSecretCredential(
                 tenant_id=self.tenant_id,
                 client_id=self.client_id,
                 client_secret=self.client_secret
             )
-            scopes = ['https://graph.microsoft.com/.default']
-            self.client = GraphClient(credential=self.credential, scopes=scopes)
+            
+            # Initialize GraphClient with the credential
+            self.client = GraphClient(credential=credential)
             logger.info("Microsoft Graph client initialized successfully")
             
         except Exception as e:
