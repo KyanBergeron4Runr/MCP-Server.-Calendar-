@@ -27,4 +27,8 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
+args = "pkill -f \"uvicorn main:app\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
 args = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"
