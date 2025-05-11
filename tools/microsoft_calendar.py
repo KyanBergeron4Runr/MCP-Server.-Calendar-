@@ -1,3 +1,4 @@
+
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from azure.identity import ClientSecretCredential
@@ -45,14 +46,8 @@ class MicrosoftCalendarClient:
                 client_id=self.client_id,
                 client_secret=self.client_secret
             )
-<<<<<<< HEAD
-            
-            # Initialize GraphClient with the credential
-            self.client = GraphClient(credential=credential)
-=======
             scopes = ['https://graph.microsoft.com/.default']
-            self.client = GraphServiceClient(credential=self.credential, scopes=scopes)
->>>>>>> 81c8e03 (Assistant checkpoint: Fix Microsoft Graph dependencies and imports)
+            self.client = GraphServiceClient(credential=credential, scopes=scopes)
             logger.info("Microsoft Graph client initialized successfully")
 
         except Exception as e:
