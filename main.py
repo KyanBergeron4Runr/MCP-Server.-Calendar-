@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 # Load environment variables before importing other modules
 load_dotenv()
 
+# Validate required environment variables
+required_env_vars = ['API_KEY']
+missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+if missing_vars:
+    raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
 try:
     from auth import get_api_key
     from tools.tool_registry import tool_registry
@@ -100,4 +106,14 @@ def test():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000) 
+    port = int(os.getenv('PORT', 5000))
+    host = os.getenv('HOST', '0.0.0.0')
+    log_level = os.getenv('LOG_LEVEL', 'info').lower()
+    
+    logger.info(f"Starting server on {host}:{port}")
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level=log_level
+    ) 
