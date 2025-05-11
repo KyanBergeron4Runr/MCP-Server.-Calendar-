@@ -41,7 +41,11 @@ class MicrosoftCalendarClient:
                 if not self.client_secret: missing_vars.append("MS_CLIENT_SECRET")
                 if not self.tenant_id: missing_vars.append("MS_TENANT_ID")
                 if not self.user_id: missing_vars.append("MS_USER_ID")
-                logger.error(f"Missing Microsoft Graph API credentials: {', '.join(missing_vars)}")
+                logger.warning(f"Missing Microsoft Graph API credentials: {', '.join(missing_vars)}. Using mock implementation.")
+                from tools.calendar import check_availability, add_event, update_event
+                self.check_availability = check_availability
+                self.add_event = add_event
+                self.update_event = update_event
                 return
 
             # Initialize the Graph client

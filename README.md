@@ -29,7 +29,7 @@ A FastAPI-based MCP (Model Context Protocol) server that provides calendar manag
 ## Running the Server
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 5000
 ```
 
 ## API Endpoints
