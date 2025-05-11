@@ -47,7 +47,7 @@ class MicrosoftCalendarClient:
             )
             
             # Initialize GraphClient with the credential
-            self.client = GraphServiceClient(credential=credential)
+            self.client = GraphServiceClient(credentials=credential)
             logger.info("Microsoft Graph client initialized successfully")
             
         except Exception as e:
