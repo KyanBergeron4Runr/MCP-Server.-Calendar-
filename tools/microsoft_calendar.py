@@ -28,25 +28,15 @@ class MicrosoftCalendarClient:
         self._initialize_client()
 
     def _initialize_client(self):
-        """Initialize the Microsoft Graph client with credentials."""
+        """Initialize the Microsoft Graph client with credentials from Replit Secrets."""
         try:
-            self.client_id = os.getenv("MS_CLIENT_ID")
-            self.client_secret = os.getenv("MS_CLIENT_SECRET") 
-            self.tenant_id = os.getenv("MS_TENANT_ID")
-            self.user_id = os.getenv("MS_USER_ID")
+            self.client_id = os.environ["MS_CLIENT_ID"]
+            self.client_secret = os.environ["MS_CLIENT_SECRET"]
+            self.tenant_id = os.environ["MS_TENANT_ID"]
+            self.user_id = os.environ["MS_USER_ID"]
 
             if not all([self.client_id, self.client_secret, self.tenant_id, self.user_id]):
-                missing_vars = []
-                if not self.client_id: missing_vars.append("MS_CLIENT_ID")
-                if not self.client_secret: missing_vars.append("MS_CLIENT_SECRET")
-                if not self.tenant_id: missing_vars.append("MS_TENANT_ID")
-                if not self.user_id: missing_vars.append("MS_USER_ID")
-                logger.warning(f"Missing Microsoft Graph API credentials: {', '.join(missing_vars)}. Using mock implementation.")
-                from tools.calendar import check_availability, add_event, update_event
-                self.check_availability = check_availability
-                self.add_event = add_event
-                self.update_event = update_event
-                return
+                raise Exception("Missing required Microsoft Graph API credentials")
 
             # Initialize the Graph client
             credential = ClientSecretCredential(
