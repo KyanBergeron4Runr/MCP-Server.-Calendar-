@@ -1,8 +1,7 @@
-
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from msgraph.core import GraphClient
 from azure.identity import ClientSecretCredential
-from msgraph import GraphServiceClient
 import os
 from dotenv import load_dotenv
 import logging
@@ -46,10 +45,11 @@ class MicrosoftCalendarClient:
                 client_id=self.client_id,
                 client_secret=self.client_secret
             )
-            scopes = ['https://graph.microsoft.com/.default']
-            self.client = GraphServiceClient(credential=credential, scopes=scopes)
+            
+            # Initialize GraphClient with the credential
+            self.client = GraphClient(credential=credential)
             logger.info("Microsoft Graph client initialized successfully")
-
+            
         except Exception as e:
             logger.error(f"Failed to initialize Microsoft Graph client: {str(e)}")
             self.client = None
