@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph.core import GraphClient
+from msgraph.core.graph_client import GraphClient
 from azure.identity import ClientSecretCredential
 import os
 from dotenv import load_dotenv
