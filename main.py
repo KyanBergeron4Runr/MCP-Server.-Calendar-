@@ -19,13 +19,7 @@ load_dotenv()
 
 try:
     from auth import get_api_key
-    from tools.microsoft_calendar import calendar_client
-    from schemas.calendar_schemas import (
-        TimeRange,
-        EventCreate,
-        EventUpdate,
-        EventDelete
-    )
+    from tools.tool_registry import tool_registry
 except Exception as e:
     logger.error(f"Error importing modules: {str(e)}")
     raise
@@ -41,70 +35,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Tool registry with Microsoft Calendar tools
-TOOLS = {
-    "calendar.check_availability": {
-        "name": "check_availability",
-        "description": "Check Microsoft Calendar availability for a given time range",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "start_time": {"type": "string", "format": "date-time"},
-                "end_time": {"type": "string", "format": "date-time"}
-            },
-            "required": ["start_time", "end_time"]
-        }
-    },
-    "calendar.add_event": {
-        "name": "add_event",
-        "description": "Add a new event to Microsoft Calendar",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "title": {"type": "string"},
-                "start_time": {"type": "string", "format": "date-time"},
-                "end_time": {"type": "string", "format": "date-time"},
-                "description": {"type": "string"}
-            },
-            "required": ["title", "start_time", "end_time"]
-        }
-    },
-    "calendar.update_event": {
-        "name": "update_event",
-        "description": "Update an existing Microsoft Calendar event",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "event_id": {"type": "string"},
-                "title": {"type": "string"},
-                "start_time": {"type": "string", "format": "date-time"},
-                "end_time": {"type": "string", "format": "date-time"},
-                "description": {"type": "string"}
-            },
-            "required": ["event_id"]
-        }
-    },
-    "calendar.delete_event": {
-        "name": "delete_event",
-        "description": "Delete a Microsoft Calendar event",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "event_id": {"type": "string"}
-            },
-            "required": ["event_id"]
-        }
-    }
-}
-
 async def event_generator():
     """Generate SSE events for tool availability."""
     while True:
         try:
             # Send all tools as a single event
+            tools = tool_registry.get_all_tools()
             yield {
                 "event": "tools",
-                "data": json.dumps({"tools": list(TOOLS.values())})
+                "data": json.dumps({"tools": list(tools.values())})
             }
             await asyncio.sleep(30)  # Update every 30 seconds
         except Exception as e:
@@ -121,45 +60,30 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
     """Handle tool execution requests."""
     try:
         data = await request.json()
-        tool_name = data.get("name")
-        parameters = data.get("parameters", {})
+        tool_call = data.get("toolCall", {})
+        tool_name = tool_call.get("toolName")
+        parameters = tool_call.get("parameters", {})
 
-        if not tool_name or tool_name not in TOOLS:
-            raise HTTPException(status_code=404, detail=f"Tool {tool_name} not found")
+        if not tool_name:
+            raise HTTPException(status_code=400, detail="No tool name provided")
 
-        # Route to appropriate Microsoft Calendar function
         try:
-            if tool_name == "calendar.check_availability":
-                time_range = TimeRange(
-                    start_time=datetime.fromisoformat(parameters["start_time"]),
-                    end_time=datetime.fromisoformat(parameters["end_time"])
-                )
-                return await calendar_client.check_availability(time_range)
-                
-            elif tool_name == "calendar.add_event":
-                event = EventCreate(
-                    title=parameters["title"],
-                    start_time=datetime.fromisoformat(parameters["start_time"]),
-                    end_time=datetime.fromisoformat(parameters["end_time"]),
-                    description=parameters.get("description")
-                )
-                return await calendar_client.add_event(event)
-                
-            elif tool_name == "calendar.update_event":
-                event = EventUpdate(
-                    event_id=parameters["event_id"],
-                    title=parameters["title"],
-                    start_time=datetime.fromisoformat(parameters["start_time"]),
-                    end_time=datetime.fromisoformat(parameters["end_time"]),
-                    description=parameters.get("description")
-                )
-                return await calendar_client.update_event(event)
-                
-            elif tool_name == "calendar.delete_event":
-                event = EventDelete(event_id=parameters["event_id"])
-                return await calendar_client.delete_event(event)
+            tool = tool_registry.get_tool(tool_name)
+            # Validate input using the tool's schema
+            input_schema = tool["input_schema"]
+            validated_params = input_schema(**parameters)
+            validated_params.validate_times()  # Additional validation for datetime fields
+            
+            # Execute the tool
+            result = await tool["handler"](parameters)
+            return result
+            
+        except KeyError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            logger.error(f"Error executing calendar operation: {str(e)}")
+            logger.error(f"Error executing tool {tool_name}: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         
     except Exception as e:
