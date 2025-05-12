@@ -27,7 +27,6 @@ class MicrosoftCalendarClient:
     def _initialize_client(self):
         """Initialize the Microsoft Graph client with credentials from Replit Secrets."""
         try:
-<<<<<<< HEAD
             # Get required environment variables
             required_vars = {
                 "MS_CLIENT_ID": os.getenv("MS_CLIENT_ID"),
@@ -48,24 +47,6 @@ class MicrosoftCalendarClient:
             self.client_secret = required_vars["MS_CLIENT_SECRET"]
             self.tenant_id = required_vars["MS_TENANT_ID"]
             self.user_id = required_vars["MS_USER_ID"]
-=======
-            self.client_id = os.environ.get("MS_CLIENT_ID")
-            self.client_secret = os.environ.get("MS_CLIENT_SECRET")
-            self.tenant_id = os.environ.get("MS_TENANT_ID")
-            self.user_id = os.environ.get("MS_USER_ID")
-
-            # Check if all required secrets are present
-            missing_secrets = []
-            for secret in ["MS_CLIENT_ID", "MS_CLIENT_SECRET", "MS_TENANT_ID", "MS_USER_ID"]:
-                if not os.environ.get(secret):
-                    missing_secrets.append(secret)
-            
-            if missing_secrets:
-                raise Exception(f"Missing required secrets in Replit Secrets: {', '.join(missing_secrets)}")
-
-            if not all([self.client_id, self.client_secret, self.tenant_id, self.user_id]):
-                raise Exception("Missing required Microsoft Graph API credentials")
->>>>>>> 3232f363c8f86c54837ae7b2b56a72f72f78bc6e
 
             # Initialize the Graph client
             credential = ClientSecretCredential(
