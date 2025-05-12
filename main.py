@@ -50,16 +50,29 @@ app.add_middleware(
 )
 
 async def event_generator():
-    """Generate SSE events for tool availability."""
+    """Generate SSE events for tool availability and keep connection alive with pings."""
+    ping_interval = 10
+    tools_interval = 30
+    last_tools_sent = 0
     while True:
+        now = datetime.utcnow().timestamp()
         try:
-            # Send all tools as a single event
-            tools = tool_registry.get_all_tools()
+            # Send tools event every tools_interval seconds
+            if now - last_tools_sent > tools_interval:
+                tools = tool_registry.get_all_tools()
+                logger.info(f"Sending tools event: {list(tools.keys())}")
+                yield {
+                    "event": "tools",
+                    "data": json.dumps({"tools": list(tools.values())})
+                }
+                last_tools_sent = now
+            # Always send a ping event every ping_interval seconds
+            logger.info("Sending ping event")
             yield {
-                "event": "tools",
-                "data": json.dumps({"tools": list(tools.values())})
+                "event": "ping",
+                "data": datetime.utcnow().isoformat()
             }
-            await asyncio.sleep(30)  # Update every 30 seconds
+            await asyncio.sleep(ping_interval)
         except Exception as e:
             logger.error(f"Error in event generator: {str(e)}")
             await asyncio.sleep(5)  # Wait a bit before retrying
