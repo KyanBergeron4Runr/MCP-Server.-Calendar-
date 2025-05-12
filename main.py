@@ -14,12 +14,16 @@ from sse_starlette.sse import EventSourceResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables before importing other modules
-load_dotenv()
+# Set environment variables programmatically
+os.environ['API_KEY'] = 'your-api-key-here'
+os.environ['MS_CLIENT_ID'] = 'your-client-id'
+os.environ['MS_CLIENT_SECRET'] = 'your-client-secret'
+os.environ['MS_TENANT_ID'] = 'your-tenant-id'
+os.environ['MS_USER_ID'] = 'your-user-id'
 
-# Validate required environment variables
+# Validate environment variables
 required_env_vars = ['API_KEY', 'MS_CLIENT_ID', 'MS_CLIENT_SECRET', 'MS_TENANT_ID', 'MS_USER_ID']
-missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+missing_vars = [var for var in required_env_vars if not os.environ.get(var)]
 if missing_vars:
     raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
