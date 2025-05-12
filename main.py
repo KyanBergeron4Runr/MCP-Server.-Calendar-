@@ -1,6 +1,6 @@
 import os
 import logging
-from dotenv import load_dotenv
+# Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
 import json
 import asyncio
 from datetime import datetime
@@ -14,14 +14,22 @@ from sse_starlette.sse import EventSourceResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables before importing other modules
-load_dotenv()
-
 # Validate required environment variables
-required_env_vars = ['API_KEY']
-missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+required_env_vars = {
+    'API_KEY': 'API key for authentication',
+    'MS_CLIENT_ID': 'Microsoft Graph API Client ID',
+    'MS_CLIENT_SECRET': 'Microsoft Graph API Client Secret',
+    'MS_TENANT_ID': 'Microsoft Graph API Tenant ID',
+    'MS_USER_ID': 'Microsoft Graph API User ID'
+}
+
+missing_vars = [var for var, desc in required_env_vars.items() if not os.getenv(var)]
 if missing_vars:
-    raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    error_msg = "Missing required environment variables:\n"
+    for var in missing_vars:
+        error_msg += f"- {var}: {required_env_vars[var]}\n"
+    logger.error(error_msg)
+    raise EnvironmentError(error_msg)
 
 try:
     from auth import get_api_key
@@ -106,14 +114,20 @@ def test():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv('PORT', 5000))
-    host = os.getenv('HOST', '0.0.0.0')
-    log_level = os.getenv('LOG_LEVEL', 'info').lower()
-    
-    logger.info(f"Starting server on {host}:{port}")
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level=log_level
-    ) 
+    try:
+        port = int(os.getenv('PORT', 5000))
+        host = os.getenv('HOST', '0.0.0.0')
+        log_level = os.getenv('LOG_LEVEL', 'info').lower()
+        
+        logger.info(f"Starting server on {host}:{port}")
+        logger.info("Environment variables loaded successfully")
+        
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            log_level=log_level
+        )
+    except Exception as e:
+        logger.error(f"Failed to start server: {str(e)}")
+        raise 

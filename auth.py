@@ -2,10 +2,7 @@ from fastapi import HTTPException, Security
 from fastapi.security.api_key import APIKeyHeader
 from typing import Optional
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+# Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
 
 # Get API key from environment variable
 API_KEY = os.getenv("API_KEY")

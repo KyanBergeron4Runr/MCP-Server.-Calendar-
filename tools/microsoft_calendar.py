@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 from msgraph import GraphServiceClient
 from azure.identity import ClientSecretCredential
 import os
-from dotenv import load_dotenv
+# Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
 import logging
 from schemas.calendar_schemas import (
     TimeRange,
@@ -18,9 +18,6 @@ from schemas.calendar_schemas import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-
 class MicrosoftCalendarClient:
     def __init__(self):
         self.client = None
@@ -30,14 +27,26 @@ class MicrosoftCalendarClient:
     def _initialize_client(self):
         """Initialize the Microsoft Graph client with credentials."""
         try:
-            self.client_id = os.getenv("MS_CLIENT_ID")
-            self.client_secret = os.getenv("MS_CLIENT_SECRET") 
-            self.tenant_id = os.getenv("MS_TENANT_ID")
-            self.user_id = os.getenv("MS_USER_ID")
+            # Get required environment variables
+            required_vars = {
+                "MS_CLIENT_ID": os.getenv("MS_CLIENT_ID"),
+                "MS_CLIENT_SECRET": os.getenv("MS_CLIENT_SECRET"),
+                "MS_TENANT_ID": os.getenv("MS_TENANT_ID"),
+                "MS_USER_ID": os.getenv("MS_USER_ID")
+            }
+            
+            # Check for missing variables
+            missing_vars = [var for var, value in required_vars.items() if not value]
+            if missing_vars:
+                error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}"
+                logger.error(error_msg)
+                raise EnvironmentError(error_msg)
 
-            if not all([self.client_id, self.client_secret, self.tenant_id, self.user_id]):
-                logger.warning("Missing Microsoft Graph API credentials. Calendar features will be disabled.")
-                return
+            # Store credentials
+            self.client_id = required_vars["MS_CLIENT_ID"]
+            self.client_secret = required_vars["MS_CLIENT_SECRET"]
+            self.tenant_id = required_vars["MS_TENANT_ID"]
+            self.user_id = required_vars["MS_USER_ID"]
 
             # Initialize the Graph client
             credential = ClientSecretCredential(
@@ -51,13 +60,14 @@ class MicrosoftCalendarClient:
             logger.info("Microsoft Graph client initialized successfully")
             
         except Exception as e:
-            logger.error(f"Failed to initialize Microsoft Graph client: {str(e)}")
-            self.client = None
+            error_msg = f"Failed to initialize Microsoft Graph client: {str(e)}"
+            logger.error(error_msg)
+            raise EnvironmentError(error_msg)
 
     def _check_client(self):
         """Check if the client is properly initialized."""
         if not self.client:
-            raise Exception("Microsoft Graph client not initialized. Please check your credentials.")
+            raise EnvironmentError("Microsoft Graph client not initialized. Please check your credentials.")
 
     async def check_availability(self, data: dict) -> dict:
         """Check if there are any calendar conflicts for a given time range.
