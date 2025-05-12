@@ -1,5 +1,6 @@
-# Python
+.env
 __pycache__/
+*.pyc
 *.py[cod]
 *$py.class
 *.so
@@ -32,7 +33,7 @@ ENV/
 *.swo
 
 # Environment variables
-.env
+
 
 # Logs
-*.log 
+*.log
