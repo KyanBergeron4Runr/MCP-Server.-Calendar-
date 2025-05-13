@@ -64,11 +64,27 @@ async def event_generator():
         try:
             # Send tools event every tools_interval seconds
             if now - last_tools_sent > tools_interval:
-                tools = tool_registry.get_all_tools()
-                logger.info(f"Sending tools event: {list(tools.keys())}")
+                tools = tool_registry._tools  # get all tool objects
+                tool_info = []
+                for name, tool in tools.items():
+                    # Extract parameter schema from Pydantic model
+                    schema = tool["input_schema"].model_json_schema()
+                    # Build a simple parameters dict: {param: {type, description}}
+                    params = {}
+                    for prop, prop_info in schema.get("properties", {}).items():
+                        params[prop] = {
+                            "type": prop_info.get("type", "string"),
+                            "description": prop_info.get("description", "")
+                        }
+                    tool_info.append({
+                        "name": name,
+                        "description": tool.get("description", ""),
+                        "parameters": params
+                    })
+                logger.info(f"Sending tools event: {[t['name'] for t in tool_info]}")
                 yield {
                     "event": "tools",
-                    "data": json.dumps({"tools": list(tools.values())})
+                    "data": json.dumps({"tools": tool_info})
                 }
                 last_tools_sent = now
             # Always send a ping event every ping_interval seconds
