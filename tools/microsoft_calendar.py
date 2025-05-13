@@ -40,8 +40,7 @@ class MicrosoftCalendarClient:
             }
             missing_vars = [var for var, value in required_vars.items() if not value]
             if missing_vars:
-                env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
-                error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}\nCurrent env: {env_keys}"
+                error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}"
                 logger.error(error_msg)
                 raise EnvironmentError(error_msg)
             self.client_id = client_id

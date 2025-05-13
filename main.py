@@ -5,7 +5,6 @@ import json
 import asyncio
 from datetime import datetime
 from typing import Dict, Any
-import sys
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,8 +18,7 @@ def get_required_env_var(name: str, description: str) -> str:
     """Get a required environment variable with proper error handling."""
     value = os.environ.get(name)
     if not value:
-        env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
-        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets.\nCurrent env: {env_keys}"
+        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets."
         logger.error(error_msg)
         raise EnvironmentError(error_msg)
     return value
@@ -148,32 +146,16 @@ def root():
 def test():
     return {"test": True}
 
-# Startup check for required environment variables
-REQUIRED_ENV_VARS = [
-    ("API_KEY", "API key for authentication"),
-    ("MS_CLIENT_ID", "Microsoft Graph API Client ID"),
-    ("MS_CLIENT_SECRET", "Microsoft Graph API Client Secret"),
-    ("MS_TENANT_ID", "Microsoft Graph API Tenant ID"),
-    ("MS_USER_ID", "Microsoft Graph API User ID")
-]
-missing_vars = [name for name, desc in REQUIRED_ENV_VARS if not os.environ.get(name)]
-if missing_vars:
-    env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
-    error_msg = (
-        f"\n\nERROR: The following required environment variables are missing: {', '.join(missing_vars)}\n"
-        f"Set them in the Replit Secrets tab.\nCurrent env: {env_keys}\n\n"
-    )
-    logger.critical(error_msg)
-    sys.exit(1)
-
 if __name__ == "__main__":
     import uvicorn
     try:
         port = int(os.environ.get('PORT', 5000))
         host = os.environ.get('HOST', '0.0.0.0')
         log_level = os.environ.get('LOG_LEVEL', 'info').lower()
+        
         logger.info(f"Starting server on {host}:{port}")
         logger.info("Environment variables loaded successfully")
+        
         uvicorn.run(
             app,
             host=host,
@@ -182,4 +164,4 @@ if __name__ == "__main__":
         )
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
-        sys.exit(1) 
+        raise Exception(f"Failed to start server: {str(e)}") 
