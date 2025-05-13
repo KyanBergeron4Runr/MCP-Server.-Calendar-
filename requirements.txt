@@ -1,7 +1,4 @@
-azure-identity==1.15.0
-requests
+
 fastapi
-uvicorn
-pydantic
 sse-starlette
-python-dotenv
+uvicorn
