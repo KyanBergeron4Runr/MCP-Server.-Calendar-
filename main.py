@@ -60,13 +60,10 @@ async def event_generator():
             # Send tools event every tools_interval seconds
             if now - last_tools_sent > tools_interval:
                 tools = tool_registry.get_all_tools()
-                # Only serialize tool names and descriptions
-                tool_info = [{"name": name, "description": tool.get("description", "")} 
-                           for name, tool in tools.items()]
-                logger.info(f"Sending tools event: {[t['name'] for t in tool_info]}")
+                logger.info(f"Sending tools event: {list(tools.keys())}")
                 yield {
                     "event": "tools",
-                    "data": json.dumps({"tools": tool_info})
+                    "data": json.dumps({"tools": list(tools.values())})
                 }
                 last_tools_sent = now
             # Always send a ping event every ping_interval seconds

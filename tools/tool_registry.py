@@ -34,7 +34,14 @@ class ToolRegistry:
 
     def get_all_tools(self) -> Dict[str, Dict[str, Any]]:
         """Get all registered tools."""
-        return self._tools
+        # Return only the name and description for tool discovery
+        return {
+            name: {
+                "name": tool["name"],
+                "description": tool["description"]
+            }
+            for name, tool in self._tools.items()
+        }
 
 # Create a singleton instance
 tool_registry = ToolRegistry()
