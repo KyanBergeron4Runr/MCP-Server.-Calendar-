@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph import GraphServiceClient
+from msgraph.core import GraphClient
 from azure.identity import ClientSecretCredential
 import os
 # Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
@@ -29,10 +29,10 @@ class MicrosoftCalendarClient:
         try:
             # Get required environment variables
             required_vars = {
-                "MS_CLIENT_ID": os.getenv("MS_CLIENT_ID"),
-                "MS_CLIENT_SECRET": os.getenv("MS_CLIENT_SECRET"),
-                "MS_TENANT_ID": os.getenv("MS_TENANT_ID"),
-                "MS_USER_ID": os.getenv("MS_USER_ID")
+                "MS_CLIENT_ID": os.environ.get("MS_CLIENT_ID"),
+                "MS_CLIENT_SECRET": os.environ.get("MS_CLIENT_SECRET"),
+                "MS_TENANT_ID": os.environ.get("MS_TENANT_ID"),
+                "MS_USER_ID": os.environ.get("MS_USER_ID")
             }
             
             # Check for missing variables
@@ -56,7 +56,7 @@ class MicrosoftCalendarClient:
             )
             
             # Initialize GraphClient with the credential
-            self.client = GraphServiceClient(credentials=credential)
+            self.client = GraphClient(credential=credential)
             logger.info("Microsoft Graph client initialized successfully")
             
         except Exception as e:
@@ -88,14 +88,14 @@ class MicrosoftCalendarClient:
             if not start_time or not end_time:
                 raise ValueError("start_time and end_time are required")
             
-            # Get calendar view for the specified time range
-            endpoint = f'/users/{self.user_id}/calendarView'
-            params = {
-                'startDateTime': start_time,
-                'endDateTime': end_time
-            }
-            
-            response = await self.client.get(endpoint, params=params)
+            # Use the Microsoft Graph SDK request builder
+            response = self.client.get(
+                f"/users/{self.user_id}/calendarView",
+                params={
+                    "startDateTime": start_time,
+                    "endDateTime": end_time
+                }
+            )
             
             if response:
                 # If any events are returned, the time slot is not available
