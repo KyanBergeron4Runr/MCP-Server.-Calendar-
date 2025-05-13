@@ -71,13 +71,25 @@ async def event_generator():
                 for name, tool in tools.items():
                     # Extract parameter schema from Pydantic model
                     schema = tool["input_schema"].model_json_schema()
-                    # Build a simple parameters dict: {param: {type, description}}
+                    # Build a complete parameters dict with all schema information
                     params = {}
                     for prop, prop_info in schema.get("properties", {}).items():
-                        params[prop] = {
+                        param_info = {
                             "type": prop_info.get("type", "string"),
-                            "description": prop_info.get("description", "")
+                            "description": prop_info.get("description", ""),
+                            "required": prop in schema.get("required", []),
                         }
+                        # Add format if specified (e.g., for datetime fields)
+                        if "format" in prop_info:
+                            param_info["format"] = prop_info["format"]
+                        # Add enum values if present
+                        if "enum" in prop_info:
+                            param_info["enum"] = prop_info["enum"]
+                        # Add default value if present
+                        if "default" in prop_info:
+                            param_info["default"] = prop_info["default"]
+                        params[prop] = param_info
+                    
                     tool_info.append({
                         "name": name,
                         "description": tool.get("description", ""),
