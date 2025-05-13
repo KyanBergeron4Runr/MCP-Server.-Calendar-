@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 import requests
 from azure.identity import ClientSecretCredential
 import os
-# Environment variables are managed by Replit Secrets Manager
+# Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
 import logging
 from schemas.calendar_schemas import (
     TimeRange,
@@ -22,50 +22,37 @@ class MicrosoftCalendarClient:
     def __init__(self):
         self.credential = None
         self.user_id = None
-        self.client_id = None
-        self.client_secret = None
-        self.tenant_id = None
         self._initialize_client()
 
     def _initialize_client(self):
         """Initialize the Microsoft Graph client with credentials from Replit Secrets."""
         try:
-            # Get required environment variables from Replit Secrets
+            # Get required environment variables
+            client_id = os.environ.get("MS_CLIENT_ID")
+            client_secret = os.environ.get("MS_CLIENT_SECRET")
+            tenant_id = os.environ.get("MS_TENANT_ID")
+            user_id = os.environ.get("MS_USER_ID")
             required_vars = {
-                "MS_CLIENT_ID": os.environ.get("MS_CLIENT_ID"),
-                "MS_CLIENT_SECRET": os.environ.get("MS_CLIENT_SECRET"),
-                "MS_TENANT_ID": os.environ.get("MS_TENANT_ID"),
-                "MS_USER_ID": os.environ.get("MS_USER_ID")
+                "MS_CLIENT_ID": client_id,
+                "MS_CLIENT_SECRET": client_secret,
+                "MS_TENANT_ID": tenant_id,
+                "MS_USER_ID": user_id
             }
-
-            # Check for missing credentials
-            missing_vars = [key for key, value in required_vars.items() if not value]
+            missing_vars = [var for var, value in required_vars.items() if not value]
             if missing_vars:
-                error_msg = f"Missing required Microsoft Graph API credentials in Replit Secrets: {', '.join(missing_vars)}"
+                error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}"
                 logger.error(error_msg)
                 raise EnvironmentError(error_msg)
-
-            # Set instance variables
-            self.client_id = required_vars["MS_CLIENT_ID"]
-            self.client_secret = required_vars["MS_CLIENT_SECRET"]
-            self.tenant_id = required_vars["MS_TENANT_ID"]
-            self.user_id = required_vars["MS_USER_ID"]
-
-            # Initialize the credential
-            try:
-                self.credential = ClientSecretCredential(
-                    tenant_id=self.tenant_id,
-                    client_id=self.client_id,
-                    client_secret=self.client_secret
-                )
-                # Test the credential
-                self.credential.get_token("https://graph.microsoft.com/.default")
-                logger.info("Microsoft Graph client initialized successfully with Replit Secrets")
-            except Exception as e:
-                error_msg = f"Failed to initialize Microsoft Graph client credentials: {str(e)}"
-                logger.error(error_msg)
-                raise EnvironmentError(error_msg)
-
+            self.client_id = client_id
+            self.client_secret = client_secret
+            self.tenant_id = tenant_id
+            self.user_id = user_id
+            self.credential = ClientSecretCredential(
+                tenant_id=self.tenant_id,
+                client_id=self.client_id,
+                client_secret=self.client_secret
+            )
+            logger.info("Microsoft Graph client initialized successfully")
         except Exception as e:
             error_msg = f"Failed to initialize Microsoft Graph client: {str(e)}"
             logger.error(error_msg)
@@ -75,20 +62,6 @@ class MicrosoftCalendarClient:
         """Check if the client is properly initialized."""
         if not self.credential:
             raise EnvironmentError("Microsoft Graph client not initialized. Please check your credentials.")
-        if not self.user_id:
-            raise EnvironmentError("Microsoft Graph user ID not set. Please check your credentials.")
-
-    def _get_auth_headers(self) -> Dict[str, str]:
-        """Get authentication headers for Microsoft Graph API requests."""
-        try:
-            token = self.credential.get_token("https://graph.microsoft.com/.default").token
-            return {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-            }
-        except Exception as e:
-            logger.error(f"Failed to get authentication token: {str(e)}")
-            raise EnvironmentError(f"Failed to get authentication token: {str(e)}")
 
     async def check_availability(self, data: dict) -> dict:
         """Check if there are any calendar conflicts for a given time range.
