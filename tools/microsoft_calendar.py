@@ -28,34 +28,31 @@ class MicrosoftCalendarClient:
         """Initialize the Microsoft Graph client with credentials from Replit Secrets."""
         try:
             # Get required environment variables
+            client_id = os.environ.get("MS_CLIENT_ID")
+            client_secret = os.environ.get("MS_CLIENT_SECRET")
+            tenant_id = os.environ.get("MS_TENANT_ID")
+            user_id = os.environ.get("MS_USER_ID")
             required_vars = {
-                "MS_CLIENT_ID": os.environ.get("MS_CLIENT_ID"),
-                "MS_CLIENT_SECRET": os.environ.get("MS_CLIENT_SECRET"),
-                "MS_TENANT_ID": os.environ.get("MS_TENANT_ID"),
-                "MS_USER_ID": os.environ.get("MS_USER_ID")
+                "MS_CLIENT_ID": client_id,
+                "MS_CLIENT_SECRET": client_secret,
+                "MS_TENANT_ID": tenant_id,
+                "MS_USER_ID": user_id
             }
-            
-            # Check for missing variables
             missing_vars = [var for var, value in required_vars.items() if not value]
             if missing_vars:
                 error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}"
                 logger.error(error_msg)
                 raise EnvironmentError(error_msg)
-
-            # Store credentials
-            self.client_id = required_vars["MS_CLIENT_ID"]
-            self.client_secret = required_vars["MS_CLIENT_SECRET"]
-            self.tenant_id = required_vars["MS_TENANT_ID"]
-            self.user_id = required_vars["MS_USER_ID"]
-
-            # Initialize the Graph client
+            self.client_id = client_id
+            self.client_secret = client_secret
+            self.tenant_id = tenant_id
+            self.user_id = user_id
             self.credential = ClientSecretCredential(
                 tenant_id=self.tenant_id,
                 client_id=self.client_id,
                 client_secret=self.client_secret
             )
             logger.info("Microsoft Graph client initialized successfully")
-            
         except Exception as e:
             error_msg = f"Failed to initialize Microsoft Graph client: {str(e)}"
             logger.error(error_msg)
