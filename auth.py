@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
-API_KEY = os.getenv("API_KEY")
+API_KEY = os.environ.get("API_KEY")
 if not API_KEY:
     logger.error("API_KEY environment variable is not set")
     raise EnvironmentError("API_KEY environment variable is not set. Please set it in Replit Secrets.")

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def get_required_env_var(name: str, description: str) -> str:
     """Get a required environment variable with proper error handling."""
-    value = os.getenv(name)
+    value = os.environ.get(name)
     if not value:
         error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets."
         logger.error(error_msg)
@@ -34,7 +34,7 @@ try:
     logger.info("All required environment variables are set")
 except EnvironmentError as e:
     logger.error(f"Environment setup failed: {str(e)}")
-    raise
+    raise Exception(f"Environment setup failed: {str(e)}")
 
 try:
     from auth import get_api_key
@@ -133,9 +133,9 @@ def test():
 if __name__ == "__main__":
     import uvicorn
     try:
-        port = int(os.getenv('PORT', 5000))
-        host = os.getenv('HOST', '0.0.0.0')
-        log_level = os.getenv('LOG_LEVEL', 'info').lower()
+        port = int(os.environ.get('PORT', 5000))
+        host = os.environ.get('HOST', '0.0.0.0')
+        log_level = os.environ.get('LOG_LEVEL', 'info').lower()
         
         logger.info(f"Starting server on {host}:{port}")
         logger.info("Environment variables loaded successfully")
