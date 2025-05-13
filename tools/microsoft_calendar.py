@@ -105,11 +105,14 @@ class MicrosoftCalendarClient:
                     "available": len(events) == 0
                 }
             else:
+                logger.error(f"Graph API error: {response.status_code} {response.text}")
+                logger.error(f"Troubleshooting info: user_id={self.user_id}, url={url}, params={params}, token_present={bool(token)}")
                 raise Exception(f"Failed to check availability: {response.text}")
                 
         except Exception as e:
-            logger.error(f"Error checking availability: {str(e)}")
-            raise Exception(f"Error checking availability: {str(e)}")
+            logger.exception("Failed to check availability")
+            from fastapi import HTTPException
+            raise HTTPException(status_code=500, detail=f"Error checking availability: {str(e)}")
 
     async def add_event(self, event: EventCreate) -> EventResponse:
         """Create a new calendar event."""
