@@ -123,16 +123,29 @@ class ToolRegistry:
         return self._tools[name]
 
     def get_all_tools(self) -> Dict[str, Dict[str, Any]]:
-        """Get all registered tools."""
-        # Return name, description, and examples for tool discovery
-        return {
-            name: {
+        """Get all registered tools with complete schema information."""
+        tools_info = {}
+        for name, tool in self._tools.items():
+            schema = tool["input_schema"]
+            schema_fields = {}
+            
+            # Get field information from the schema
+            for field_name, field in schema.__fields__.items():
+                field_info = {
+                    "type": str(field.type_),
+                    "description": field.field_info.description,
+                    "required": field.required,
+                    "example": field.field_info.example if hasattr(field.field_info, "example") else None
+                }
+                schema_fields[field_name] = field_info
+
+            tools_info[name] = {
                 "name": tool["name"],
                 "description": tool["description"],
-                "examples": tool["examples"]
+                "schema": schema_fields,
+                "examples": self._get_examples(schema)
             }
-            for name, tool in self._tools.items()
-        }
+        return tools_info
 
 # Create a singleton instance
 tool_registry = ToolRegistry()
