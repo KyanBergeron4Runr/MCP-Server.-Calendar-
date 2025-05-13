@@ -18,7 +18,8 @@ def get_required_env_var(name: str, description: str) -> str:
     """Get a required environment variable with proper error handling."""
     value = os.environ.get(name)
     if not value:
-        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets."
+        env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
+        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets.\nCurrent env: {env_keys}"
         logger.error(error_msg)
         raise EnvironmentError(error_msg)
     return value
