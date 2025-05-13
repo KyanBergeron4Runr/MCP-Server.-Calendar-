@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from msgraph.core import GraphClient
+import requests
 from azure.identity import ClientSecretCredential
 import os
 # Environment variables are managed by Replit Secrets Manager. Do not use .env or load_dotenv().
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class MicrosoftCalendarClient:
     def __init__(self):
-        self.client = None
+        self.credential = None
         self.user_id = None
         self._initialize_client()
 
@@ -49,14 +49,11 @@ class MicrosoftCalendarClient:
             self.user_id = required_vars["MS_USER_ID"]
 
             # Initialize the Graph client
-            credential = ClientSecretCredential(
+            self.credential = ClientSecretCredential(
                 tenant_id=self.tenant_id,
                 client_id=self.client_id,
                 client_secret=self.client_secret
             )
-            
-            # Initialize GraphClient with the credential
-            self.client = GraphClient(credential=credential)
             logger.info("Microsoft Graph client initialized successfully")
             
         except Exception as e:
@@ -66,7 +63,7 @@ class MicrosoftCalendarClient:
 
     def _check_client(self):
         """Check if the client is properly initialized."""
-        if not self.client:
+        if not self.credential:
             raise EnvironmentError("Microsoft Graph client not initialized. Please check your credentials.")
 
     async def check_availability(self, data: dict) -> dict:
@@ -89,22 +86,26 @@ class MicrosoftCalendarClient:
                 raise ValueError("start_time and end_time are required")
             
             # Use the Microsoft Graph SDK request builder
-            response = self.client.get(
-                f"/users/{self.user_id}/calendarView",
-                params={
-                    "startDateTime": start_time,
-                    "endDateTime": end_time
-                }
-            )
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendarView"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            params = {
+                "startDateTime": start_time,
+                "endDateTime": end_time
+            }
+            response = requests.get(url, headers=headers, params=params)
             
-            if response:
+            if response.status_code == 200:
                 # If any events are returned, the time slot is not available
                 events = response.json().get('value', [])
                 return {
                     "available": len(events) == 0
                 }
             else:
-                raise Exception("Failed to check availability: No response received")
+                raise Exception(f"Failed to check availability: {response.text}")
                 
         except Exception as e:
             logger.error(f"Error checking availability: {str(e)}")
@@ -134,7 +135,7 @@ class MicrosoftCalendarClient:
 
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events'
-            response = await self.client.post(endpoint, json=event_data)
+            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.post, endpoint, json=event_data)
             
             if response:
                 data = response.json()
@@ -173,7 +174,7 @@ class MicrosoftCalendarClient:
 
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
-            response = await self.client.patch(endpoint, json=event_data)
+            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.patch, endpoint, json=event_data)
             
             if response:
                 return EventResponse(
@@ -194,7 +195,7 @@ class MicrosoftCalendarClient:
             
             # Create and send the request
             endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
-            await self.client.delete(endpoint)
+            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.delete, endpoint)
             
             return EventResponse(
                 event_id=event.event_id,
