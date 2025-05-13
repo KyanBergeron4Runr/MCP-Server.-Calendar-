@@ -14,22 +14,27 @@ from sse_starlette.sse import EventSourceResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Validate required environment variables
-required_env_vars = {
-    'API_KEY': 'API key for authentication',
-    'MS_CLIENT_ID': 'Microsoft Graph API Client ID',
-    'MS_CLIENT_SECRET': 'Microsoft Graph API Client Secret',
-    'MS_TENANT_ID': 'Microsoft Graph API Tenant ID',
-    'MS_USER_ID': 'Microsoft Graph API User ID'
-}
+def get_required_env_var(name: str, description: str) -> str:
+    """Get a required environment variable with proper error handling."""
+    value = os.getenv(name)
+    if not value:
+        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets."
+        logger.error(error_msg)
+        raise EnvironmentError(error_msg)
+    return value
 
-missing_vars = [var for var, desc in required_env_vars.items() if not os.getenv(var)]
-if missing_vars:
-    error_msg = "Missing required environment variables:\n"
-    for var in missing_vars:
-        error_msg += f"- {var}: {required_env_vars[var]}\n"
-    logger.error(error_msg)
-    raise EnvironmentError(error_msg)
+# Get required environment variables
+try:
+    API_KEY = get_required_env_var("API_KEY", "API key for authentication")
+    MS_CLIENT_ID = get_required_env_var("MS_CLIENT_ID", "Microsoft Graph API Client ID")
+    MS_CLIENT_SECRET = get_required_env_var("MS_CLIENT_SECRET", "Microsoft Graph API Client Secret")
+    MS_TENANT_ID = get_required_env_var("MS_TENANT_ID", "Microsoft Graph API Tenant ID")
+    MS_USER_ID = get_required_env_var("MS_USER_ID", "Microsoft Graph API User ID")
+    
+    logger.info("All required environment variables are set")
+except EnvironmentError as e:
+    logger.error(f"Environment setup failed: {str(e)}")
+    raise
 
 try:
     from auth import get_api_key
