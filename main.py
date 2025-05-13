@@ -10,6 +10,9 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
+# Import auth module first
+from auth import get_api_key
+
 # Configure logging first
 logging.basicConfig(
     level=logging.INFO,
@@ -43,13 +46,12 @@ app.add_middleware(
 )
 
 # Global variables for environment and dependencies
-API_KEY = None
 tool_registry = None
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize the application on startup."""
-    global API_KEY, tool_registry
+    global tool_registry
     
     try:
         # Get required environment variables from Replit Secrets
@@ -68,12 +70,9 @@ async def startup_event():
             logger.error(error_msg)
             raise EnvironmentError(error_msg)
 
-        # Set API key
-        API_KEY = required_vars["API_KEY"]
-        logger.info("API key loaded successfully from Replit Secrets")
+        logger.info("Environment variables loaded successfully from Replit Secrets")
         
         # Import and initialize dependencies
-        from auth import get_api_key
         from tools.tool_registry import tool_registry as registry
         tool_registry = registry
         logger.info("Dependencies initialized successfully")
