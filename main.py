@@ -41,7 +41,7 @@ try:
     from tools.tool_registry import tool_registry
 except Exception as e:
     logger.error(f"Error importing modules: {str(e)}")
-    raise
+    raise Exception(f"Error importing modules: {str(e)}")
 
 app = FastAPI(title="MCP Calendar Tool Server")
 
@@ -148,4 +148,4 @@ if __name__ == "__main__":
         )
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
-        raise 
+        raise Exception(f"Failed to start server: {str(e)}") 

@@ -109,7 +109,7 @@ class MicrosoftCalendarClient:
                 
         except Exception as e:
             logger.error(f"Error checking availability: {str(e)}")
-            raise
+            raise Exception(f"Error checking availability: {str(e)}")
 
     async def add_event(self, event: EventCreate) -> EventResponse:
         """Create a new calendar event."""
@@ -134,21 +134,26 @@ class MicrosoftCalendarClient:
             }
 
             # Create and send the request
-            endpoint = f'/users/{self.user_id}/calendar/events'
-            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.post, endpoint, json=event_data)
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(endpoint, headers=headers, json=event_data)
             
-            if response:
+            if response.status_code == 201:
                 data = response.json()
                 return EventResponse(
                     event_id=data['id'],
                     status="created"
                 )
             else:
-                raise Exception("Failed to create event: No response received")
+                raise Exception(f"Failed to create event: {response.text}")
                 
         except Exception as e:
             logger.error(f"Error creating event: {str(e)}")
-            raise
+            raise Exception(f"Error creating event: {str(e)}")
 
     async def update_event(self, event: EventUpdate) -> EventResponse:
         """Update an existing calendar event."""
@@ -173,20 +178,25 @@ class MicrosoftCalendarClient:
             }
 
             # Create and send the request
-            endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
-            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.patch, endpoint, json=event_data)
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event.event_id}'
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.patch(endpoint, headers=headers, json=event_data)
             
-            if response:
+            if response.status_code == 200:
                 return EventResponse(
                     event_id=event.event_id,
                     status="updated"
                 )
             else:
-                raise Exception("Failed to update event: No response received")
+                raise Exception(f"Failed to update event: {response.text}")
                 
         except Exception as e:
             logger.error(f"Error updating event: {str(e)}")
-            raise
+            raise Exception(f"Error updating event: {str(e)}")
 
     async def delete_event(self, event: EventDelete) -> EventResponse:
         """Delete a calendar event."""
@@ -194,17 +204,25 @@ class MicrosoftCalendarClient:
             self._check_client()
             
             # Create and send the request
-            endpoint = f'/users/{self.user_id}/calendar/events/{event.event_id}'
-            response = await self.credential.get_token("https://graph.microsoft.com/.default").authorize_request(requests.delete, endpoint)
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event.event_id}'
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            response = requests.delete(endpoint, headers=headers)
             
-            return EventResponse(
-                event_id=event.event_id,
-                status="deleted"
-            )
+            if response.status_code == 204:
+                return EventResponse(
+                    event_id=event.event_id,
+                    status="deleted"
+                )
+            else:
+                raise Exception(f"Failed to delete event: {response.text}")
                 
         except Exception as e:
             logger.error(f"Error deleting event: {str(e)}")
-            raise
+            raise Exception(f"Error deleting event: {str(e)}")
 
 # Create a singleton instance
 calendar_client = MicrosoftCalendarClient()
