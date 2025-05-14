@@ -121,16 +121,23 @@ async def mcp_events():
 async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
     """Handle tool execution requests."""
     try:
-        data = await request.json()
-        tool_call = data.get("toolCall", {})
+        # Log the incoming request
+        body = await request.json()
+        logger.info("📥 MCP tool call received: %s", json.dumps(body, indent=2))
+        
+        tool_call = body.get("toolCall", {})
         tool_name = tool_call.get("toolName")
         parameters = tool_call.get("parameters", {})
 
         if not tool_name:
+            logger.error("❌ No tool name provided in request")
             raise HTTPException(status_code=400, detail="No tool name provided")
 
         try:
+            # Get and validate the tool
             tool = tool_registry.get_tool(tool_name)
+            logger.info("🔧 Executing tool: %s with parameters: %s", tool_name, json.dumps(parameters, indent=2))
+            
             # Validate input using the tool's schema
             input_schema = tool["input_schema"]
             validated_params = input_schema(**parameters)
@@ -138,18 +145,32 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             
             # Execute the tool
             result = await tool["handler"](parameters)
-            return result
+            
+            # Format response according to MCP protocol
+            response = {
+                "toolResponse": {
+                    "toolName": tool_name,
+                    "output": result
+                }
+            }
+            logger.info("✅ Tool execution successful: %s", json.dumps(response, indent=2))
+            return response
             
         except KeyError as e:
-            raise HTTPException(status_code=404, detail=str(e))
+            logger.error("❌ Tool not found: %s", str(e))
+            raise HTTPException(status_code=404, detail=f"Tool not found: {str(e)}")
         except ValueError as e:
+            logger.error("❌ Invalid parameters: %s", str(e))
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            logger.error(f"Error executing tool {tool_name}: {str(e)}")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.error("❌ Tool execution error: %s", str(e))
+            raise HTTPException(status_code=500, detail=f"Tool error: {str(e)}")
         
+    except json.JSONDecodeError as e:
+        logger.error("❌ Invalid JSON in request: %s", str(e))
+        raise HTTPException(status_code=400, detail="Invalid JSON in request")
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
+        logger.error("❌ Error processing message: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
