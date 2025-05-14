@@ -96,19 +96,27 @@ async def event_generator():
                         "parameters": params
                     })
                 logger.info(f"Sending tools event: {[t['name'] for t in tool_info]}")
+                # Format tools event according to n8n-nodes-mcp requirements
+                tools_data = json.dumps({"tools": tool_info})
                 yield {
                     "event": "tools",
-                    "data": json.dumps({"tools": tool_info}),
-                    "retry": 30000  # Add retry interval for SSE clients
+                    "data": tools_data,
+                    "retry": 30000,
+                    "id": str(int(now * 1000))
                 }
+                # Add an extra newline after tools event
+                yield {"data": ""}
                 last_tools_sent = now
             # Always send a ping event every ping_interval seconds
             logger.info("Sending ping event")
             yield {
                 "event": "ping",
                 "data": datetime.utcnow().isoformat(),
-                "retry": 30000  # Add retry interval for SSE clients
+                "retry": 30000,
+                "id": str(int(now * 1000))
             }
+            # Add an extra newline after ping event
+            yield {"data": ""}
             await asyncio.sleep(ping_interval)
         except Exception as e:
             logger.error(f"Error in event generator: {str(e)}")
@@ -121,8 +129,10 @@ async def mcp_events():
         event_generator(),
         headers={
             "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive"
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "*"  # Allow CORS for n8n
         }
     )
 
