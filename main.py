@@ -123,7 +123,7 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
     try:
         # Log the incoming request
         body = await request.json()
-        logger.info("📥 MCP tool call received: %s", json.dumps(body, indent=2))
+        logger.info("📥 Received toolCall: %s", json.dumps(body, indent=2))
         
         tool_call = body.get("toolCall", {})
         tool_name = tool_call.get("toolName")
@@ -143,8 +143,8 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             validated_params = input_schema(**parameters)
             validated_params.validate_times()  # Additional validation for datetime fields
             
-            # Execute the tool
-            result = await tool["handler"](parameters)
+            # Execute the tool with validated parameters
+            result = await tool["handler"](validated_params.dict())
             
             # Format response according to MCP protocol
             response = {
@@ -153,7 +153,7 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
                     "output": result
                 }
             }
-            logger.info("✅ Tool execution successful: %s", json.dumps(response, indent=2))
+            logger.info("✅ Tool executed: %s", json.dumps(response, indent=2))
             return response
             
         except KeyError as e:
@@ -163,8 +163,8 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             logger.error("❌ Invalid parameters: %s", str(e))
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
-            logger.error("❌ Tool execution error: %s", str(e))
-            raise HTTPException(status_code=500, detail=f"Tool error: {str(e)}")
+            logger.error("❌ Tool failed: %s", str(e))
+            raise HTTPException(status_code=500, detail=f"Tool execution failed: {str(e)}")
         
     except json.JSONDecodeError as e:
         logger.error("❌ Invalid JSON in request: %s", str(e))
