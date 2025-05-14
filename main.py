@@ -98,14 +98,16 @@ async def event_generator():
                 logger.info(f"Sending tools event: {[t['name'] for t in tool_info]}")
                 yield {
                     "event": "tools",
-                    "data": json.dumps({"tools": tool_info})
+                    "data": json.dumps({"tools": tool_info}),
+                    "retry": 30000  # Add retry interval for SSE clients
                 }
                 last_tools_sent = now
             # Always send a ping event every ping_interval seconds
             logger.info("Sending ping event")
             yield {
                 "event": "ping",
-                "data": datetime.utcnow().isoformat()
+                "data": datetime.utcnow().isoformat(),
+                "retry": 30000  # Add retry interval for SSE clients
             }
             await asyncio.sleep(ping_interval)
         except Exception as e:
@@ -115,7 +117,14 @@ async def event_generator():
 @app.get("/mcp-events")
 async def mcp_events():
     """SSE endpoint for tool discovery."""
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(
+        event_generator(),
+        headers={
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
 
 @app.post("/mcp/message")
 async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
