@@ -15,28 +15,32 @@ from sse_starlette.sse import EventSourceResponse
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_required_env_var(name: str, description: str) -> str:
-    """Get a required environment variable with proper error handling."""
-    value = os.environ.get(name)
-    if not value:
-        env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
-        error_msg = f"Required environment variable '{name}' ({description}) is not set. Please set it in Replit Secrets.\nCurrent env: {env_keys}"
-        logger.error(error_msg)
-        raise EnvironmentError(error_msg)
-    return value
+# Get environment variables
+API_KEY = os.environ.get("API_KEY")
+MS_CLIENT_ID = os.environ.get("MS_CLIENT_ID")
+MS_CLIENT_SECRET = os.environ.get("MS_CLIENT_SECRET")
+MS_TENANT_ID = os.environ.get("MS_TENANT_ID")
+MS_USER_ID = os.environ.get("MS_USER_ID")
 
-# Get required environment variables
-try:
-    API_KEY = get_required_env_var("API_KEY", "API key for authentication")
-    MS_CLIENT_ID = get_required_env_var("MS_CLIENT_ID", "Microsoft Graph API Client ID")
-    MS_CLIENT_SECRET = get_required_env_var("MS_CLIENT_SECRET", "Microsoft Graph API Client Secret")
-    MS_TENANT_ID = get_required_env_var("MS_TENANT_ID", "Microsoft Graph API Tenant ID")
-    MS_USER_ID = get_required_env_var("MS_USER_ID", "Microsoft Graph API User ID")
-    
-    logger.info("All required environment variables are set")
-except EnvironmentError as e:
-    logger.error(f"Environment setup failed: {str(e)}")
-    raise Exception(f"Environment setup failed: {str(e)}")
+# Check for missing environment variables
+missing_vars = []
+for var_name, var_value in [
+    ("API_KEY", API_KEY),
+    ("MS_CLIENT_ID", MS_CLIENT_ID),
+    ("MS_CLIENT_SECRET", MS_CLIENT_SECRET),
+    ("MS_TENANT_ID", MS_TENANT_ID),
+    ("MS_USER_ID", MS_USER_ID)
+]:
+    if not var_value:
+        missing_vars.append(var_name)
+
+if missing_vars:
+    env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
+    error_msg = f"Missing required environment variables: {', '.join(missing_vars)}\nCurrent env: {env_keys}"
+    logger.error(error_msg)
+    raise EnvironmentError(error_msg)
+
+logger.info("All required environment variables are set")
 
 try:
     from auth import get_api_key

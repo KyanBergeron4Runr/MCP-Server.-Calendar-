@@ -18,6 +18,12 @@ from schemas.calendar_schemas import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Get environment variables
+MS_CLIENT_ID = os.environ.get("MS_CLIENT_ID")
+MS_CLIENT_SECRET = os.environ.get("MS_CLIENT_SECRET")
+MS_TENANT_ID = os.environ.get("MS_TENANT_ID")
+MS_USER_ID = os.environ.get("MS_USER_ID")
+
 class MicrosoftCalendarClient:
     def __init__(self):
         self.credential = None
@@ -27,27 +33,27 @@ class MicrosoftCalendarClient:
     def _initialize_client(self):
         """Initialize the Microsoft Graph client with credentials from Replit Secrets."""
         try:
-            # Get required environment variables
-            client_id = os.environ.get("MS_CLIENT_ID")
-            client_secret = os.environ.get("MS_CLIENT_SECRET")
-            tenant_id = os.environ.get("MS_TENANT_ID")
-            user_id = os.environ.get("MS_USER_ID")
-            required_vars = {
-                "MS_CLIENT_ID": client_id,
-                "MS_CLIENT_SECRET": client_secret,
-                "MS_TENANT_ID": tenant_id,
-                "MS_USER_ID": user_id
-            }
-            missing_vars = [var for var, value in required_vars.items() if not value]
+            # Check for missing environment variables
+            missing_vars = []
+            for var_name, var_value in [
+                ("MS_CLIENT_ID", MS_CLIENT_ID),
+                ("MS_CLIENT_SECRET", MS_CLIENT_SECRET),
+                ("MS_TENANT_ID", MS_TENANT_ID),
+                ("MS_USER_ID", MS_USER_ID)
+            ]:
+                if not var_value:
+                    missing_vars.append(var_name)
+
             if missing_vars:
                 env_keys = [k for k in os.environ.keys() if k.startswith('MS_') or k == 'API_KEY']
                 error_msg = f"Missing required Microsoft Graph API credentials: {', '.join(missing_vars)}\nCurrent env: {env_keys}"
                 logger.error(error_msg)
                 raise EnvironmentError(error_msg)
-            self.client_id = client_id
-            self.client_secret = client_secret
-            self.tenant_id = tenant_id
-            self.user_id = user_id
+
+            self.client_id = MS_CLIENT_ID
+            self.client_secret = MS_CLIENT_SECRET
+            self.tenant_id = MS_TENANT_ID
+            self.user_id = MS_USER_ID
             self.credential = ClientSecretCredential(
                 tenant_id=self.tenant_id,
                 client_id=self.client_id,
