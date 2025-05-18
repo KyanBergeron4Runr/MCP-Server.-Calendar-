@@ -168,8 +168,9 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             
             # Execute the tool with validated parameters
             result = await tool["handler"](validated_params.dict())
-            
-            # Format response according to MCP protocol
+            # Ensure result is JSON serializable
+            if hasattr(result, 'dict'):
+                result = result.dict()
             response = {
                 "toolResponse": {
                     "toolName": tool_name,
