@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Any
 import sys
+from pydantic import BaseModel
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -140,6 +141,16 @@ async def mcp_events():
         }
     )
 
+def to_serializable(obj):
+    if isinstance(obj, BaseModel):
+        return obj.dict()
+    elif isinstance(obj, dict):
+        return {k: to_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [to_serializable(i) for i in obj]
+    else:
+        return obj
+
 @app.post("/mcp/message")
 async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
     """Handle tool execution requests."""
@@ -168,9 +179,7 @@ async def handle_message(request: Request, api_key: str = Depends(get_api_key)):
             
             # Execute the tool with validated parameters
             result = await tool["handler"](validated_params.dict())
-            # Ensure result is JSON serializable
-            if hasattr(result, 'dict'):
-                result = result.dict()
+            result = to_serializable(result)
             response = {
                 "toolResponse": {
                     "toolName": tool_name,
