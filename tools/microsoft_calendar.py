@@ -118,29 +118,25 @@ class MicrosoftCalendarClient:
             from fastapi import HTTPException
             raise HTTPException(status_code=500, detail=f"Error checking availability: {str(e)}")
 
-    async def add_event(self, event: EventCreate) -> EventResponse:
-        """Create a new calendar event."""
+    async def add_event(self, event: dict) -> EventResponse:
         try:
             self._check_client()
-            
-            # Format the event data for Microsoft Graph API
+            event_obj = EventCreate(**event)
             event_data = {
-                "subject": event.title,
+                "subject": event_obj.title,
                 "start": {
-                    "dateTime": event.start_time.isoformat(),
+                    "dateTime": event_obj.start_time.isoformat(),
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": event.end_time.isoformat(),
+                    "dateTime": event_obj.end_time.isoformat(),
                     "timeZone": "UTC"
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event.description or ""
+                    "content": event_obj.description or ""
                 }
             }
-
-            # Create and send the request
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
@@ -148,7 +144,6 @@ class MicrosoftCalendarClient:
                 "Content-Type": "application/json"
             }
             response = requests.post(endpoint, headers=headers, json=event_data)
-            
             if response.status_code == 201:
                 data = response.json()
                 return EventResponse(
@@ -157,50 +152,43 @@ class MicrosoftCalendarClient:
                 )
             else:
                 raise Exception(f"Failed to create event: {response.text}")
-                
         except Exception as e:
             logger.error(f"Error creating event: {str(e)}")
             raise Exception(f"Error creating event: {str(e)}")
 
-    async def update_event(self, event: EventUpdate) -> EventResponse:
-        """Update an existing calendar event."""
+    async def update_event(self, event: dict) -> EventResponse:
         try:
             self._check_client()
-            
-            # Format the event data for Microsoft Graph API
+            event_obj = EventUpdate(**event)
             event_data = {
-                "subject": event.title,
+                "subject": event_obj.title,
                 "start": {
-                    "dateTime": event.start_time.isoformat(),
+                    "dateTime": event_obj.start_time.isoformat(),
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": event.end_time.isoformat(),
+                    "dateTime": event_obj.end_time.isoformat(),
                     "timeZone": "UTC"
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event.description or ""
+                    "content": event_obj.description or ""
                 }
             }
-
-            # Create and send the request
-            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event.event_id}'
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json"
             }
             response = requests.patch(endpoint, headers=headers, json=event_data)
-            
             if response.status_code == 200:
                 return EventResponse(
-                    event_id=event.event_id,
+                    event_id=event_obj.event_id,
                     status="updated"
                 )
             else:
                 raise Exception(f"Failed to update event: {response.text}")
-                
         except Exception as e:
             logger.error(f"Error updating event: {str(e)}")
             raise Exception(f"Error updating event: {str(e)}")
