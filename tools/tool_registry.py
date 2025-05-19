@@ -1,6 +1,7 @@
 from typing import Dict, Any, Callable, Awaitable
 from pydantic import BaseModel, Field
 from datetime import datetime
+from schemas.calendar_schemas import CheckMeetingAtTimeInput
 
 class AvailabilityInput(BaseModel):
     start_time: str = Field(..., description="Start time in ISO format (e.g., 2025-05-10T14:00:00Z)")
@@ -106,4 +107,11 @@ tool_registry.register(
     description="Deletes a meeting from the calendar.",
     input_schema=DeleteMeetingInput,
     handler=calendar_client.delete_event
+)
+
+tool_registry.register(
+    name="check_meeting_at_time",
+    description="Checks if the user has any Outlook Calendar events during a specific time window (± a few minutes). Useful for verifying if the user is busy at a given time.",
+    input_schema=CheckMeetingAtTimeInput,
+    handler=calendar_client.check_meeting_at_time
 ) 

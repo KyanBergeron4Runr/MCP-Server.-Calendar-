@@ -11,8 +11,12 @@ from schemas.calendar_schemas import (
     EventCreate,
     EventUpdate,
     EventDelete,
-    EventResponse
+    EventResponse,
+    CheckMeetingAtTimeInput,
+    CheckMeetingAtTimeResponse,
+    MeetingEvent
 )
+import pytz
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -218,6 +222,49 @@ class MicrosoftCalendarClient:
         except Exception as e:
             logger.error(f"Error deleting event: {str(e)}")
             raise Exception(f"Error deleting event: {str(e)}")
+
+    async def check_meeting_at_time(self, data: dict) -> dict:
+        try:
+            self._check_client()
+            input_data = CheckMeetingAtTimeInput(**data)
+            # Parse date and time
+            import dateutil.parser
+            # Combine date and time
+            dt_str = f"{input_data.date}T{input_data.time}:00"
+            tz = pytz.timezone(input_data.timezone) if input_data.timezone else pytz.UTC
+            dt = tz.localize(datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S"))
+            window = timedelta(minutes=input_data.window_minutes or 15)
+            start_dt = (dt - window).astimezone(pytz.UTC)
+            end_dt = (dt + window).astimezone(pytz.UTC)
+            # Query Microsoft Graph API
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendarView"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            params = {
+                "startDateTime": start_dt.isoformat(),
+                "endDateTime": end_dt.isoformat()
+            }
+            response = requests.get(url, headers=headers, params=params)
+            events = []
+            has_meeting = False
+            if response.status_code == 200:
+                for event in response.json().get('value', []):
+                    has_meeting = True
+                    events.append(MeetingEvent(
+                        subject=event.get('subject', ''),
+                        start=event['start']['dateTime'],
+                        end=event['end']['dateTime'],
+                        location=event.get('location', {}).get('displayName', '')
+                    ))
+                return CheckMeetingAtTimeResponse(has_meeting=has_meeting, events=events)
+            else:
+                raise Exception(f"Failed to check meetings: {response.text}")
+        except Exception as e:
+            logger.error(f"Error in check_meeting_at_time: {str(e)}")
+            raise Exception(f"Error in check_meeting_at_time: {str(e)}")
 
 # Create a singleton instance
 calendar_client = MicrosoftCalendarClient()

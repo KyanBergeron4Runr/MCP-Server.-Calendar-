@@ -27,4 +27,20 @@ class EventDelete(BaseModel):
 
 class EventResponse(BaseModel):
     event_id: str = Field(..., description="ID of the created/updated event")
-    status: str = Field(..., description="Status of the operation") 
+    status: str = Field(..., description="Status of the operation")
+
+class CheckMeetingAtTimeInput(BaseModel):
+    date: str = Field(..., description="The date to check, in YYYY-MM-DD format.")
+    time: str = Field(..., description="The time to check, in HH:MM 24-hour format.")
+    timezone: Optional[str] = Field("UTC", description="User's timezone for accurate calendar matching. Default is UTC.")
+    window_minutes: Optional[int] = Field(15, description="Time window (in minutes) before and after the specified time to check for overlapping meetings. Default is 15.")
+
+class MeetingEvent(BaseModel):
+    subject: str
+    start: str
+    end: str
+    location: str
+
+class CheckMeetingAtTimeResponse(BaseModel):
+    has_meeting: bool
+    events: List[MeetingEvent] = [] 
