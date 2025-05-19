@@ -76,24 +76,15 @@ class MicrosoftCalendarClient:
 
     async def check_availability(self, data: dict) -> dict:
         """Check if there are any calendar conflicts for a given time range.
-        
-        Args:
-            data (dict): Dictionary containing start_time and end_time in ISO format
-            
-        Returns:
-            dict: Dictionary with availability status
+        Returns both 'available' and a list of busy/taken time slots.
         """
         try:
             self._check_client()
-            
             # Extract time range from input data
             start_time = data.get("start_time")
             end_time = data.get("end_time")
-            
             if not start_time or not end_time:
                 raise ValueError("start_time and end_time are required")
-            
-            # Use the Microsoft Graph SDK request builder
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendarView"
             headers = {
@@ -105,18 +96,24 @@ class MicrosoftCalendarClient:
                 "endDateTime": end_time
             }
             response = requests.get(url, headers=headers, params=params)
-            
             if response.status_code == 200:
-                # If any events are returned, the time slot is not available
                 events = response.json().get('value', [])
+                busy_times = [
+                    {
+                        "start": event['start']['dateTime'],
+                        "end": event['end']['dateTime'],
+                        "subject": event.get('subject', '')
+                    }
+                    for event in events
+                ]
                 return {
-                    "available": len(events) == 0
+                    "available": len(events) == 0,
+                    "busy_times": busy_times
                 }
             else:
                 logger.error(f"Graph API error: {response.status_code} {response.text}")
                 logger.error(f"Troubleshooting info: user_id={self.user_id}, url={url}, params={params}, token_present={bool(token)}")
                 raise Exception(f"Failed to check availability: {response.text}")
-                
         except Exception as e:
             logger.exception("Failed to check availability")
             from fastapi import HTTPException
