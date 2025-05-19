@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "calendar-tools": {
+      "url": "http://localhost:5000/mcp-events",
+      "apiKey": "Test12345",
+      "description": "MCP Calendar Tools Server"
+    }
+  }
+} 

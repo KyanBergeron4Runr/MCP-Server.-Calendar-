@@ -223,7 +223,7 @@ class MicrosoftCalendarClient:
             logger.error(f"Error deleting event: {str(e)}")
             raise Exception(f"Error deleting event: {str(e)}")
 
-    async def check_meeting_at_time(self, data: dict) -> dict:
+    async def find_meetings_near_time(self, data: dict) -> dict:
         try:
             self._check_client()
             input_data = CheckMeetingAtTimeInput(**data)
@@ -263,8 +263,8 @@ class MicrosoftCalendarClient:
             else:
                 raise Exception(f"Failed to check meetings: {response.text}")
         except Exception as e:
-            logger.error(f"Error in check_meeting_at_time: {str(e)}")
-            raise Exception(f"Error in check_meeting_at_time: {str(e)}")
+            logger.error(f"Error in find_meetings_near_time: {str(e)}")
+            raise Exception(f"Error in find_meetings_near_time: {str(e)}")
 
 # Create a singleton instance
 calendar_client = MicrosoftCalendarClient()
