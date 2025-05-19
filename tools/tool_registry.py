@@ -111,7 +111,7 @@ tool_registry.register(
 
 tool_registry.register(
     name="check_meeting_at_time",
-    description="Checks if the user has any Outlook Calendar events during a specific time window (± a few minutes). Useful for verifying if the user is busy at a given time.",
+    description="Checks if the user has any Outlook Calendar events during a specific time window (± a few minutes). Useful for verifying if the user is busy at a given time.\n\nParameters:\n- date: string, e.g. '2025-05-19'\n- time: string, e.g. '12:00'\n- timezone: string, e.g. 'America/New_York' (default: UTC)\n- window_minutes: integer (not string!), e.g. 15.\n\nExample usage:\n{ 'date': '2025-05-19', 'time': '12:00', 'timezone': 'America/New_York', 'window_minutes': 15 }\n\nNote: window_minutes must be an integer, not a string.",
     input_schema=CheckMeetingAtTimeInput,
     handler=calendar_client.check_meeting_at_time
 ) 
