@@ -138,9 +138,11 @@ class MicrosoftCalendarClient:
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event_obj.description or ""
+                    "content": event_obj.body or event_obj.description or ""
                 }
             }
+            if event_obj.location:
+                event_data["location"] = {"displayName": event_obj.location}
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
@@ -176,9 +178,11 @@ class MicrosoftCalendarClient:
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event_obj.description or ""
+                    "content": event_obj.body or event_obj.description or ""
                 }
             }
+            if event_obj.location:
+                event_data["location"] = {"displayName": event_obj.location}
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {

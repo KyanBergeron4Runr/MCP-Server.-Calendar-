@@ -19,6 +19,8 @@ class CreateMeetingInput(BaseModel):
     start_time: str = Field(..., description="Start time in ISO format (e.g., 2025-05-10T14:00:00Z)")
     end_time: str = Field(..., description="End time in ISO format (e.g., 2025-05-10T15:00:00Z)")
     description: str = Field("", description="Optional description of the meeting")
+    location: str = Field("", description="Optional location of the meeting")
+    body: str = Field("", description="Optional additional message or invitation content")
 
     def validate_times(self):
         try:
@@ -33,6 +35,8 @@ class UpdateMeetingInput(BaseModel):
     start_time: str = Field(..., description="New start time in ISO format")
     end_time: str = Field(..., description="New end time in ISO format")
     description: str = Field("", description="New description of the meeting")
+    location: str = Field("", description="New location of the meeting")
+    body: str = Field("", description="New additional message or invitation content")
 
     def validate_times(self):
         try:
@@ -90,14 +94,14 @@ tool_registry.register(
 
 tool_registry.register(
     name="create_meeting",
-    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional). Returns the event ID and status.",
+    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional), location (string, optional, e.g. meeting room, address, or online link), body (string, optional, additional message or invitation content). Returns the event ID and status.",
     input_schema=CreateMeetingInput,
     handler=calendar_client.add_event
 )
 
 tool_registry.register(
     name="update_meeting",
-    description="Update an existing meeting in your Outlook calendar. Parameters: event_id (string, required), title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional). Returns the event ID and status.",
+    description="Update an existing meeting in your Outlook calendar. Parameters: event_id (string, required), title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional), location (string, optional), body (string, optional). Returns the event ID and status.",
     input_schema=UpdateMeetingInput,
     handler=calendar_client.update_event
 )

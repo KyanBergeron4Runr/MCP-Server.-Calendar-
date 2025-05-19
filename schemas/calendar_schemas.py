@@ -15,6 +15,8 @@ class EventBase(BaseModel):
     start_time: datetime = Field(..., description="Start time of the event")
     end_time: datetime = Field(..., description="End time of the event")
     description: Optional[str] = Field(None, description="Description of the event")
+    location: Optional[str] = Field(None, description="Location of the event (e.g., meeting room, address, or online link)")
+    body: Optional[str] = Field(None, description="Additional message or body content for the event invitation")
 
 class EventCreate(EventBase):
     pass
