@@ -17,6 +17,7 @@ from schemas.calendar_schemas import (
     MeetingEvent
 )
 import pytz
+import dateutil.parser
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -76,13 +77,15 @@ class MicrosoftCalendarClient:
 
     async def check_availability(self, data: dict) -> dict:
         """Check if there are any calendar conflicts for a given time range.
-        Returns both 'available' and a list of busy/taken time slots.
+        Returns both 'available' and a list of busy/taken time slots in the requested timezone.
         """
         try:
             self._check_client()
             # Extract time range from input data
             start_time = data.get("start_time")
             end_time = data.get("end_time")
+            timezone = data.get("timezone") or "America/New_York"
+            tz = pytz.timezone(timezone)
             if not start_time or not end_time:
                 raise ValueError("start_time and end_time are required")
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
@@ -98,14 +101,22 @@ class MicrosoftCalendarClient:
             response = requests.get(url, headers=headers, params=params)
             if response.status_code == 200:
                 events = response.json().get('value', [])
-                busy_times = [
-                    {
-                        "start": event['start']['dateTime'],
-                        "end": event['end']['dateTime'],
+                busy_times = []
+                for event in events:
+                    # Convert UTC or offset time to requested timezone
+                    start_dt_utc = dateutil.parser.isoparse(event['start']['dateTime'])
+                    end_dt_utc = dateutil.parser.isoparse(event['end']['dateTime'])
+                    if start_dt_utc.tzinfo is None:
+                        start_dt_utc = pytz.UTC.localize(start_dt_utc)
+                    if end_dt_utc.tzinfo is None:
+                        end_dt_utc = pytz.UTC.localize(end_dt_utc)
+                    start_local = start_dt_utc.astimezone(tz).replace(tzinfo=None)
+                    end_local = end_dt_utc.astimezone(tz).replace(tzinfo=None)
+                    busy_times.append({
+                        "start": start_local.isoformat(),
+                        "end": end_local.isoformat(),
                         "subject": event.get('subject', '')
-                    }
-                    for event in events
-                ]
+                    })
                 return {
                     "available": len(events) == 0,
                     "busy_times": busy_times
@@ -229,7 +240,6 @@ class MicrosoftCalendarClient:
             self._check_client()
             input_data = CheckMeetingAtTimeInput(**data)
             # Parse date and time
-            import dateutil.parser
             # Combine date and time
             dt_str = f"{input_data.date}T{input_data.time}:00"
             tz = pytz.timezone(input_data.timezone) if input_data.timezone else pytz.UTC

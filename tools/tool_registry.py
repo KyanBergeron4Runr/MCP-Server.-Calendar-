@@ -6,6 +6,7 @@ from schemas.calendar_schemas import CheckMeetingAtTimeInput
 class AvailabilityInput(BaseModel):
     start_time: str = Field(..., description="Start time in ISO format (e.g., 2025-05-10T14:00:00Z)")
     end_time: str = Field(..., description="End time in ISO format (e.g., 2025-05-10T15:00:00Z)")
+    timezone: str = Field("America/New_York", description="Timezone for the returned busy times (IANA name, e.g., 'America/New_York'). Default is Eastern Time.")
 
     def validate_times(self):
         try:
@@ -87,7 +88,7 @@ from tools.microsoft_calendar import calendar_client
 # Register all calendar tools
 tool_registry.register(
     name="check_availability",
-    description="Check if your calendar is free or busy during a specific time range. Returns 'available: true' if there are no events in the given period, otherwise 'available: false'. Also returns a list of busy/taken time slots (with start, end, and subject) for the given range. Parameters: start_time (ISO 8601, e.g. '2025-05-10T14:00:00Z'), end_time (ISO 8601, e.g. '2025-05-10T15:00:00Z').",
+    description="Check if your calendar is free or busy during a specific time range. Returns 'available: true' if there are no events in the given period, otherwise 'available: false'. Also returns a list of busy/taken time slots (with start, end, and subject) for the given range, in the requested timezone (default: Eastern Time, America/New_York). Parameters: start_time (ISO 8601), end_time (ISO 8601), timezone (IANA name, optional).",
     input_schema=AvailabilityInput,
     handler=calendar_client.check_availability
 )
