@@ -1,4 +1,4 @@
-run = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000 --workers 1 --limit-concurrency 100 --backlog 2048 --timeout-keep-alive 30"
+run = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"
 modules = ["python-3.11"]
 
 [nix]
@@ -6,32 +6,16 @@ channel = "stable-24_05"
 packages = ["libxcrypt"]
 
 [deployment]
-run = ["sh", "-c", "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000 --workers 1 --limit-concurrency 100 --backlog 2048 --timeout-keep-alive 30"]
+run = ["sh", "-c", "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"]
 build = ["sh", "-c", "upm install"]
-deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-protocol = "http"
-
-[env]
-PYTHONPATH = "${REPL_HOME}"
-
-[packager]
-language = "python3"
-ignoredPackages = ["unit_tests"]
-
-[packager.features]
-packageSearch = true
-guessImports = true
-enabledForHosting = false
-
-[languages.python3]
-pattern = "**/{*.py,*.py3,*.python}"
-
-[languages.python3.languageServer]
-start = "pylsp"
 
 [workflows]
 
@@ -46,4 +30,4 @@ args = "pkill -f \"uvicorn main:app\""
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000 --workers 1 --limit-concurrency 100 --backlog 2048 --timeout-keep-alive 30"
+args = "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000"

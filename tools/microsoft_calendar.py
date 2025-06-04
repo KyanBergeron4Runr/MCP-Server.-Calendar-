@@ -14,9 +14,7 @@ from schemas.calendar_schemas import (
     EventResponse,
     CheckMeetingAtTimeInput,
     CheckMeetingAtTimeResponse,
-    MeetingEvent,
-    SearchMeetingByIdInput,
-    MeetingDetails
+    MeetingEvent
 )
 import pytz
 import dateutil.parser
@@ -149,36 +147,10 @@ class MicrosoftCalendarClient:
                 "body": {
                     "contentType": "text",
                     "content": event_obj.body or event_obj.description or ""
-                },
-                "importance": event_obj.importance,
-                "sensitivity": event_obj.sensitivity,
-                "showAs": event_obj.show_as,
-                "isOnlineMeeting": event_obj.is_online_meeting,
-                "allowNewTimeProposals": event_obj.allow_new_time_proposals,
-                "responseRequested": event_obj.response_requested
+                }
             }
-
-            # Add location if provided
             if event_obj.location:
                 event_data["location"] = {"displayName": event_obj.location}
-
-            # Add online meeting provider if specified
-            if event_obj.is_online_meeting and event_obj.online_meeting_provider:
-                event_data["onlineMeetingProvider"] = event_obj.online_meeting_provider
-
-            # Add attendees if provided
-            if event_obj.attendees:
-                event_data["attendees"] = [
-                    {
-                        "emailAddress": {
-                            "address": attendee.get("email", ""),
-                            "name": attendee.get("name", "")
-                        },
-                        "type": "required"
-                    }
-                    for attendee in event_obj.attendees
-                ]
-
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
@@ -237,14 +209,13 @@ class MicrosoftCalendarClient:
             logger.error(f"Error updating event: {str(e)}")
             raise Exception(f"Error updating event: {str(e)}")
 
-    async def delete_event(self, data: dict) -> EventResponse:
+    async def delete_event(self, event: EventDelete) -> EventResponse:
         """Delete a calendar event."""
         try:
             self._check_client()
-            event_obj = EventDelete(**data)
             
             # Create and send the request
-            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
                 "Authorization": f"Bearer {token}",
@@ -254,7 +225,7 @@ class MicrosoftCalendarClient:
             
             if response.status_code == 204:
                 return EventResponse(
-                    event_id=event_obj.event_id,
+                    event_id=event.event_id,
                     status="deleted"
                 )
             else:
@@ -305,42 +276,6 @@ class MicrosoftCalendarClient:
         except Exception as e:
             logger.error(f"Error in find_meetings_near_time: {str(e)}")
             raise Exception(f"Error in find_meetings_near_time: {str(e)}")
-
-    async def find_meeting_by_id(self, data: dict) -> MeetingDetails:
-        """Find a specific meeting by its event ID."""
-        try:
-            self._check_client()
-            input_data = SearchMeetingByIdInput(**data)
-            
-            # Query Microsoft Graph API
-            token = self.credential.get_token("https://graph.microsoft.com/.default").token
-            url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{input_data.event_id}"
-            headers = {
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                event = response.json()
-                return MeetingDetails(
-                    event_id=event['id'],
-                    subject=event.get('subject', ''),
-                    start=event['start']['dateTime'],
-                    end=event['end']['dateTime'],
-                    location=event.get('location', {}).get('displayName'),
-                    description=event.get('bodyPreview', ''),
-                    body=event.get('body', {}).get('content', ''),
-                    organizer=event.get('organizer', {}),
-                    attendees=event.get('attendees', [])
-                )
-            elif response.status_code == 404:
-                raise Exception(f"Meeting with ID {input_data.event_id} not found")
-            else:
-                raise Exception(f"Failed to find meeting: {response.text}")
-        except Exception as e:
-            logger.error(f"Error in find_meeting_by_id: {str(e)}")
-            raise Exception(f"Error in find_meeting_by_id: {str(e)}")
 
 # Create a singleton instance
 calendar_client = MicrosoftCalendarClient()
