@@ -8,14 +8,30 @@ packages = ["libxcrypt"]
 [deployment]
 run = ["sh", "-c", "python3 -m uvicorn main:app --host 0.0.0.0 --port 5000 --workers 1 --limit-concurrency 100 --backlog 2048 --timeout-keep-alive 30"]
 build = ["sh", "-c", "upm install"]
-
-[[ports]]
-localPort = 3000
-externalPort = 3000
+deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+protocol = "http"
+
+[env]
+PYTHONPATH = "${REPL_HOME}"
+
+[packager]
+language = "python3"
+ignoredPackages = ["unit_tests"]
+
+[packager.features]
+packageSearch = true
+guessImports = true
+enabledForHosting = false
+
+[languages.python3]
+pattern = "**/{*.py,*.py3,*.python}"
+
+[languages.python3.languageServer]
+start = "pylsp"
 
 [workflows]
 
