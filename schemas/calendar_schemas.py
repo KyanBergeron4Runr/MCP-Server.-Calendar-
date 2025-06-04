@@ -17,6 +17,14 @@ class EventBase(BaseModel):
     description: Optional[str] = Field(None, description="Description of the event")
     location: Optional[str] = Field(None, description="Location of the event (e.g., meeting room, address, or online link)")
     body: Optional[str] = Field(None, description="Additional message or body content for the event invitation")
+    attendees: Optional[List[Dict[str, str]]] = Field(None, description="List of attendees with their email addresses and names")
+    importance: Optional[str] = Field("normal", description="Meeting importance level (low, normal, high)")
+    sensitivity: Optional[str] = Field("normal", description="Meeting sensitivity level (normal, personal, private, confidential)")
+    show_as: Optional[str] = Field("busy", description="How the meeting shows on calendar (free, tentative, busy, oof, workingElsewhere)")
+    is_online_meeting: Optional[bool] = Field(False, description="Whether this is an online meeting")
+    online_meeting_provider: Optional[str] = Field(None, description="Online meeting provider (teamsForBusiness, skypeForBusiness, skypeForConsumer)")
+    allow_new_time_proposals: Optional[bool] = Field(True, description="Whether attendees can propose new times")
+    response_requested: Optional[bool] = Field(True, description="Whether to request responses from attendees")
 
 class EventCreate(EventBase):
     pass

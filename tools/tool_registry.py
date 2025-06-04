@@ -99,7 +99,7 @@ tool_registry.register(
 
 tool_registry.register(
     name="create_meeting",
-    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional), location (string, optional, e.g. meeting room, address, or online link), body (string, optional, additional message or invitation content). Returns the event ID and status.",
+    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional), location (string, optional, e.g. meeting room, address, or online link), body (string, optional, additional message or invitation content), attendees (array of objects with email and name, optional), importance (string, optional, 'low', 'normal', or 'high'), sensitivity (string, optional, 'normal', 'personal', 'private', or 'confidential'), show_as (string, optional, 'free', 'tentative', 'busy', 'oof', or 'workingElsewhere'), is_online_meeting (boolean, optional), online_meeting_provider (string, optional, 'teamsForBusiness', 'skypeForBusiness', or 'skypeForConsumer'), allow_new_time_proposals (boolean, optional), response_requested (boolean, optional). Returns the event ID and status.",
     input_schema=CreateMeetingInput,
     handler=calendar_client.add_event
 )
