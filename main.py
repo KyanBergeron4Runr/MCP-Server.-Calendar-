@@ -61,6 +61,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Configure FastAPI for better memory usage
+app.state.max_request_size = 1024 * 1024  # 1MB max request size
+app.state.max_response_size = 1024 * 1024  # 1MB max response size
+
 async def event_generator():
     """Generate SSE events for tool availability and keep connection alive with pings."""
     ping_interval = 10
@@ -244,7 +248,11 @@ if __name__ == "__main__":
             app,
             host=host,
             port=port,
-            log_level=log_level
+            log_level=log_level,
+            workers=1,  # Use single worker to avoid memory issues
+            limit_concurrency=100,  # Limit concurrent connections
+            backlog=2048,  # Increase connection backlog
+            timeout_keep_alive=30  # Reduce keep-alive timeout
         )
     except Exception as e:
         logger.error(f"Failed to start server: {str(e)}")
