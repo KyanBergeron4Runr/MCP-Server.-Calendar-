@@ -237,13 +237,14 @@ class MicrosoftCalendarClient:
             logger.error(f"Error updating event: {str(e)}")
             raise Exception(f"Error updating event: {str(e)}")
 
-    async def delete_event(self, event: EventDelete) -> EventResponse:
+    async def delete_event(self, data: dict) -> EventResponse:
         """Delete a calendar event."""
         try:
             self._check_client()
+            event_obj = EventDelete(**data)
             
             # Create and send the request
-            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event.event_id}'
+            endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
                 "Authorization": f"Bearer {token}",
@@ -253,7 +254,7 @@ class MicrosoftCalendarClient:
             
             if response.status_code == 204:
                 return EventResponse(
-                    event_id=event.event_id,
+                    event_id=event_obj.event_id,
                     status="deleted"
                 )
             else:
