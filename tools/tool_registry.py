@@ -1,7 +1,7 @@
 from typing import Dict, Any, Callable, Awaitable
 from pydantic import BaseModel, Field
 from datetime import datetime
-from schemas.calendar_schemas import CheckMeetingAtTimeInput
+from schemas.calendar_schemas import CheckMeetingAtTimeInput, SearchMeetingByIdInput
 
 class AvailabilityInput(BaseModel):
     start_time: str = Field(..., description="Start time in ISO format (e.g., 2025-05-10T14:00:00Z)")
@@ -123,4 +123,11 @@ tool_registry.register(
     description="Find all meetings or events in your Outlook calendar that overlap with a specific time window around a given date and time. Useful for checking if you have any meetings scheduled near a particular moment.\n\nParameters:\n- date: string, e.g. '2025-05-19' (required)\n- time: string, e.g. '12:00' (required, 24-hour format)\n- timezone: string, e.g. 'America/New_York' (optional, default: UTC)\n- window_minutes: integer, e.g. 15 (optional, default: 15). This is the number of minutes before and after the specified time to search for overlapping meetings.\n\nReturns a list of meetings (with subject, start, end, and location) that overlap with the window, and a boolean 'has_meeting'.\n\nExample usage:\n{ 'date': '2025-05-19', 'time': '12:00', 'timezone': 'America/New_York', 'window_minutes': 15 }\n\nNote: window_minutes must be an integer, not a string.",
     input_schema=CheckMeetingAtTimeInput,
     handler=calendar_client.find_meetings_near_time
+)
+
+tool_registry.register(
+    name="find_meeting_by_id",
+    description="Find a specific meeting in your Outlook calendar by its event ID. Returns detailed information about the meeting including subject, start/end times, location, description, organizer, and attendees. Parameters: event_id (string, required).",
+    input_schema=SearchMeetingByIdInput,
+    handler=calendar_client.find_meeting_by_id
 ) 

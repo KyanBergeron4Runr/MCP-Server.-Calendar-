@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import datetime
 
 class TimeRange(BaseModel):
@@ -45,4 +45,18 @@ class MeetingEvent(BaseModel):
 
 class CheckMeetingAtTimeResponse(BaseModel):
     has_meeting: bool
-    events: List[MeetingEvent] = [] 
+    events: List[MeetingEvent] = []
+
+class SearchMeetingByIdInput(BaseModel):
+    event_id: str = Field(..., description="ID of the event to search for")
+
+class MeetingDetails(BaseModel):
+    event_id: str
+    subject: str
+    start: str
+    end: str
+    location: Optional[str] = None
+    description: Optional[str] = None
+    body: Optional[str] = None
+    organizer: Optional[Dict[str, str]] = None
+    attendees: Optional[List[Dict[str, str]]] = None 

@@ -14,7 +14,9 @@ from schemas.calendar_schemas import (
     EventResponse,
     CheckMeetingAtTimeInput,
     CheckMeetingAtTimeResponse,
-    MeetingEvent
+    MeetingEvent,
+    SearchMeetingByIdInput,
+    MeetingDetails
 )
 import pytz
 import dateutil.parser
@@ -276,6 +278,42 @@ class MicrosoftCalendarClient:
         except Exception as e:
             logger.error(f"Error in find_meetings_near_time: {str(e)}")
             raise Exception(f"Error in find_meetings_near_time: {str(e)}")
+
+    async def find_meeting_by_id(self, data: dict) -> MeetingDetails:
+        """Find a specific meeting by its event ID."""
+        try:
+            self._check_client()
+            input_data = SearchMeetingByIdInput(**data)
+            
+            # Query Microsoft Graph API
+            token = self.credential.get_token("https://graph.microsoft.com/.default").token
+            url = f"https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{input_data.event_id}"
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                event = response.json()
+                return MeetingDetails(
+                    event_id=event['id'],
+                    subject=event.get('subject', ''),
+                    start=event['start']['dateTime'],
+                    end=event['end']['dateTime'],
+                    location=event.get('location', {}).get('displayName'),
+                    description=event.get('bodyPreview', ''),
+                    body=event.get('body', {}).get('content', ''),
+                    organizer=event.get('organizer', {}),
+                    attendees=event.get('attendees', [])
+                )
+            elif response.status_code == 404:
+                raise Exception(f"Meeting with ID {input_data.event_id} not found")
+            else:
+                raise Exception(f"Failed to find meeting: {response.text}")
+        except Exception as e:
+            logger.error(f"Error in find_meeting_by_id: {str(e)}")
+            raise Exception(f"Error in find_meeting_by_id: {str(e)}")
 
 # Create a singleton instance
 calendar_client = MicrosoftCalendarClient()
