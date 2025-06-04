@@ -49,6 +49,10 @@ class UpdateMeetingInput(BaseModel):
 class DeleteMeetingInput(BaseModel):
     event_id: str = Field(..., description="ID of the event to delete")
 
+    def validate_times(self):
+        # No-op since DeleteMeetingInput doesn't have time fields to validate
+        pass
+
 class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Dict[str, Any]] = {}
