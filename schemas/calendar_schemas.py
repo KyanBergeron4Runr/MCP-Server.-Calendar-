@@ -15,7 +15,9 @@ class EventBase(BaseModel):
     start_time: datetime = Field(..., description="Start time of the event")
     end_time: datetime = Field(..., description="End time of the event")
     description: Optional[str] = Field(None, description="Description of the event")
-    location: Optional[str] = Field(None, description="Location of the event (e.g., meeting room, address, or online link)")
+    physical_location: Optional[str] = Field(None, description="Physical location of the event (e.g., meeting room, address)")
+    virtual_meeting_link: Optional[str] = Field(None, description="Link for virtual meeting (e.g., Zoom, Teams)")
+    reminder_minutes: Optional[int] = Field(30, description="Minutes before the event to send a reminder")
     body: Optional[str] = Field(None, description="Additional message or body content for the event invitation")
 
 class EventCreate(EventBase):
