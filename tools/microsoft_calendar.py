@@ -153,21 +153,14 @@ class MicrosoftCalendarClient:
                     "overrides": [
                         {
                             "method": "email",
-                            "minutes": event_obj.reminder_minutes or 30
+                            "minutes": 30  # Always set to 30 minutes
                         }
                     ]
                 }
             }
             
-            # Handle location information
-            location_parts = []
-            if event_obj.physical_location:
-                location_parts.append(f"Physical Location: {event_obj.physical_location}")
-            if event_obj.virtual_meeting_link:
-                location_parts.append(f"Virtual Meeting: {event_obj.virtual_meeting_link}")
-            
-            if location_parts:
-                event_data["location"] = {"displayName": " | ".join(location_parts)}
+            # Set physical location to Slack
+            event_data["location"] = {"displayName": "Slack (look at confirmation email for more details)"}
 
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
