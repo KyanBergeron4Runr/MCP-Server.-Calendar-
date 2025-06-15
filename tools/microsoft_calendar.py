@@ -141,14 +141,15 @@ class MicrosoftCalendarClient:
             start_time_utc = start_time.astimezone(pytz.UTC)
             end_time_utc = end_time.astimezone(pytz.UTC)
             
+            # Format the event data according to Microsoft Graph API requirements
             event_data = {
                 "subject": event['title'],
                 "start": {
-                    "dateTime": start_time_utc.isoformat(),
+                    "dateTime": start_time_utc.strftime("%Y-%m-%dT%H:%M:%S.0000000"),
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": end_time_utc.isoformat(),
+                    "dateTime": end_time_utc.strftime("%Y-%m-%dT%H:%M:%S.0000000"),
                     "timeZone": "UTC"
                 },
                 "body": {
@@ -160,14 +161,17 @@ class MicrosoftCalendarClient:
                     "overrides": [
                         {
                             "method": "email",
-                            "minutes": 30  # Always set to 30 minutes
+                            "minutes": 30
                         }
                     ]
+                },
+                "location": {
+                    "displayName": "Online"
                 }
             }
-            
-            # Set location to Online
-            event_data["location"] = {"displayName": "Online"}
+
+            # Log the event data for debugging
+            logger.info(f"Creating event with data: {event_data}")
 
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
@@ -175,7 +179,17 @@ class MicrosoftCalendarClient:
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json"
             }
+
+            # Log the request details
+            logger.info(f"Making request to: {endpoint}")
+            logger.info(f"Headers: {headers}")
+
             response = requests.post(endpoint, headers=headers, json=event_data)
+            
+            # Log the response for debugging
+            logger.info(f"Response status: {response.status_code}")
+            logger.info(f"Response body: {response.text}")
+
             if response.status_code == 201:
                 data = response.json()
                 return EventResponse(
