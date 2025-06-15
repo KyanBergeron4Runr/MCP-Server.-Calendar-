@@ -99,7 +99,7 @@ tool_registry.register(
 
 tool_registry.register(
     name="create_meeting",
-    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional). Note: Reminders are automatically set to 30 minutes before the meeting. Physical location will be set to 'Slack (look at confirmation email for more details)'. Virtual meeting link should be left blank for now as it will be added later.",
+    description="Create a new meeting in your Outlook calendar. Parameters: title (string, required), start_time (ISO 8601, required), end_time (ISO 8601, required), description (string, optional), location (string, optional), body (string, optional). The location will be set to 'Online' by default if not specified.",
     input_schema=CreateMeetingInput,
     handler=calendar_client.add_event
 )
