@@ -133,20 +133,27 @@ class MicrosoftCalendarClient:
     async def add_event(self, event: dict) -> EventResponse:
         try:
             self._check_client()
-            event_obj = EventCreate(**event)
+            # Parse the datetime strings with timezone information
+            start_time = dateutil.parser.isoparse(event['start_time'])
+            end_time = dateutil.parser.isoparse(event['end_time'])
+            
+            # Convert to UTC for the API
+            start_time_utc = start_time.astimezone(pytz.UTC)
+            end_time_utc = end_time.astimezone(pytz.UTC)
+            
             event_data = {
-                "subject": event_obj.title,
+                "subject": event['title'],
                 "start": {
-                    "dateTime": event_obj.start_time.isoformat(),
+                    "dateTime": start_time_utc.isoformat(),
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": event_obj.end_time.isoformat(),
+                    "dateTime": end_time_utc.isoformat(),
                     "timeZone": "UTC"
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event_obj.body or event_obj.description or ""
+                    "content": event.get('body') or event.get('description') or ""
                 },
                 "reminders": {
                     "useDefault": False,
@@ -159,8 +166,8 @@ class MicrosoftCalendarClient:
                 }
             }
             
-            # Set physical location to Slack
-            event_data["location"] = {"displayName": "Slack (look at confirmation email for more details)"}
+            # Set location to Online
+            event_data["location"] = {"displayName": "Online"}
 
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
