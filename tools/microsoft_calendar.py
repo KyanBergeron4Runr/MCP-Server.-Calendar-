@@ -141,29 +141,23 @@ class MicrosoftCalendarClient:
             start_time_utc = start_time.astimezone(pytz.UTC)
             end_time_utc = end_time.astimezone(pytz.UTC)
             
-            # Format the event data according to Microsoft Graph API requirements
+            # Use standard ISO8601 format with 'Z' for UTC
+            start_time_str = start_time_utc.isoformat().replace('+00:00', 'Z')
+            end_time_str = end_time_utc.isoformat().replace('+00:00', 'Z')
+            
             event_data = {
                 "subject": event['title'],
                 "start": {
-                    "dateTime": start_time_utc.strftime("%Y-%m-%dT%H:%M:%S.0000000"),
+                    "dateTime": start_time_str,
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": end_time_utc.strftime("%Y-%m-%dT%H:%M:%S.0000000"),
+                    "dateTime": end_time_str,
                     "timeZone": "UTC"
                 },
                 "body": {
                     "contentType": "text",
                     "content": event.get('body') or event.get('description') or ""
-                },
-                "reminders": {
-                    "useDefault": False,
-                    "overrides": [
-                        {
-                            "method": "email",
-                            "minutes": 30
-                        }
-                    ]
                 },
                 "location": {
                     "displayName": "Online"
