@@ -200,23 +200,34 @@ class MicrosoftCalendarClient:
         try:
             self._check_client()
             event_obj = EventUpdate(**event)
+            # Parse the datetime strings with timezone information
+            start_time = dateutil.parser.isoparse(event_obj.start_time)
+            end_time = dateutil.parser.isoparse(event_obj.end_time)
+            start_time_utc = start_time.astimezone(pytz.UTC)
+            end_time_utc = end_time.astimezone(pytz.UTC)
+            start_time_str = start_time_utc.isoformat().replace('+00:00', 'Z')
+            end_time_str = end_time_utc.isoformat().replace('+00:00', 'Z')
+
             event_data = {
                 "subject": event_obj.title,
                 "start": {
-                    "dateTime": event_obj.start_time.isoformat(),
+                    "dateTime": start_time_str,
                     "timeZone": "UTC"
                 },
                 "end": {
-                    "dateTime": event_obj.end_time.isoformat(),
+                    "dateTime": end_time_str,
                     "timeZone": "UTC"
                 },
                 "body": {
                     "contentType": "text",
-                    "content": event_obj.body or event_obj.description or ""
+                    "content": getattr(event_obj, 'body', None) or getattr(event_obj, 'description', None) or ""
                 }
             }
-            if event_obj.location:
-                event_data["location"] = {"displayName": event_obj.location}
+            # Only add location if present
+            location = getattr(event_obj, 'location', None)
+            if location:
+                event_data["location"] = {"displayName": location}
+
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
