@@ -130,21 +130,23 @@ class MicrosoftCalendarClient:
             from fastapi import HTTPException
             raise HTTPException(status_code=500, detail=f"Error checking availability: {str(e)}")
 
+    def ensure_datetime(self, dt):
+        if isinstance(dt, datetime):
+            return dt
+        return dateutil.parser.isoparse(dt)
+
     async def add_event(self, event: dict) -> EventResponse:
         try:
             self._check_client()
-            # Parse the datetime strings with timezone information
-            start_time = dateutil.parser.isoparse(event['start_time'])
-            end_time = dateutil.parser.isoparse(event['end_time'])
-            
+            # Ensure start_time and end_time are datetime objects
+            start_time = self.ensure_datetime(event['start_time'])
+            end_time = self.ensure_datetime(event['end_time'])
             # Convert to UTC for the API
             start_time_utc = start_time.astimezone(pytz.UTC)
             end_time_utc = end_time.astimezone(pytz.UTC)
-            
             # Use standard ISO8601 format with 'Z' for UTC
             start_time_str = start_time_utc.isoformat().replace('+00:00', 'Z')
             end_time_str = end_time_utc.isoformat().replace('+00:00', 'Z')
-            
             event_data = {
                 "subject": event['title'],
                 "start": {
@@ -163,27 +165,21 @@ class MicrosoftCalendarClient:
                     "displayName": "Online"
                 }
             }
-
             # Log the event data for debugging
             logger.info(f"Creating event with data: {event_data}")
-
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json"
             }
-
             # Log the request details
             logger.info(f"Making request to: {endpoint}")
             logger.info(f"Headers: {headers}")
-
             response = requests.post(endpoint, headers=headers, json=event_data)
-            
             # Log the response for debugging
             logger.info(f"Response status: {response.status_code}")
             logger.info(f"Response body: {response.text}")
-
             if response.status_code == 201:
                 data = response.json()
                 return EventResponse(
@@ -200,14 +196,13 @@ class MicrosoftCalendarClient:
         try:
             self._check_client()
             event_obj = EventUpdate(**event)
-            # Parse the datetime strings with timezone information
-            start_time = dateutil.parser.isoparse(event_obj.start_time)
-            end_time = dateutil.parser.isoparse(event_obj.end_time)
+            # Ensure start_time and end_time are datetime objects
+            start_time = self.ensure_datetime(event_obj.start_time)
+            end_time = self.ensure_datetime(event_obj.end_time)
             start_time_utc = start_time.astimezone(pytz.UTC)
             end_time_utc = end_time.astimezone(pytz.UTC)
             start_time_str = start_time_utc.isoformat().replace('+00:00', 'Z')
             end_time_str = end_time_utc.isoformat().replace('+00:00', 'Z')
-
             event_data = {
                 "subject": event_obj.title,
                 "start": {
@@ -227,7 +222,6 @@ class MicrosoftCalendarClient:
             location = getattr(event_obj, 'location', None)
             if location:
                 event_data["location"] = {"displayName": location}
-
             endpoint = f'https://graph.microsoft.com/v1.0/users/{self.user_id}/calendar/events/{event_obj.event_id}'
             token = self.credential.get_token("https://graph.microsoft.com/.default").token
             headers = {
