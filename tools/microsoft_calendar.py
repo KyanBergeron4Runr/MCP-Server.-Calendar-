@@ -163,7 +163,9 @@ class MicrosoftCalendarClient:
                 },
                 "location": {
                     "displayName": "Online"
-                }
+                },
+                "isOnlineMeeting": True,
+                "onlineMeetingProvider": "teamsForBusiness"
             }
             # Log the event data for debugging
             logger.info(f"Creating event with data: {event_data}")
@@ -182,9 +184,13 @@ class MicrosoftCalendarClient:
             logger.info(f"Response body: {response.text}")
             if response.status_code == 201:
                 data = response.json()
+                join_url = None
+                if 'onlineMeeting' in data and data['onlineMeeting'] and 'joinUrl' in data['onlineMeeting']:
+                    join_url = data['onlineMeeting']['joinUrl']
                 return EventResponse(
                     event_id=data['id'],
-                    status="created"
+                    status="created",
+                    virtual_meeting_link=join_url
                 )
             else:
                 raise Exception(f"Failed to create event: {response.text}")

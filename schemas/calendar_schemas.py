@@ -32,6 +32,7 @@ class EventDelete(BaseModel):
 class EventResponse(BaseModel):
     event_id: str = Field(..., description="ID of the created/updated event")
     status: str = Field(..., description="Status of the operation")
+    virtual_meeting_link: Optional[str] = Field(None, description="Link for virtual meeting (e.g., Zoom, Teams)")
 
 class CheckMeetingAtTimeInput(BaseModel):
     date: str = Field(..., description="The date to check, in YYYY-MM-DD format.")
